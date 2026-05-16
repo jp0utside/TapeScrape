@@ -1,0 +1,35 @@
+# Environment and secrets
+.env
+.env.*
+*.secret
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Backend runtime
+*.db
+*.db-journal
+backend/tapescrape.db
+
+# Xcode / Swift
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+.build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store
+*.swp
+
+# IDE
+.idea/
+.vscode/
