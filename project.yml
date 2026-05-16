@@ -1,0 +1,66 @@
+name: TapeScrape
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  defaultConfig: Debug
+  xcodeVersion: "16"
+  bundleIdPrefix: com.jake
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    TARGETED_DEVICE_FAMILY: "1"  # iPhone only
+
+targets:
+  TapeScrape:
+    type: application
+    platform: iOS
+    sources:
+      - path: TapeScrape
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jake.tapescrape
+        INFOPLIST_FILE: TapeScrape/Info.plist
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+    info:
+      path: TapeScrape/Info.plist
+      properties:
+        UILaunchScreen:
+          UIColorName: ""
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIRequiresFullScreen: true
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        CFBundleURLTypes:
+          - CFBundleURLName: com.jake.tapescrape
+            CFBundleURLSchemes:
+              - tapescrape
+
+  TapeScrapeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: TapeScrapeTests
+    dependencies:
+      - target: TapeScrape
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jake.tapescrapeTests
+        GENERATE_INFOPLIST_FILE: YES
+
+  TapeScrapeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: TapeScrapeUITests
+    dependencies:
+      - target: TapeScrape
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jake.tapescrapeUITests
+        TEST_TARGET_NAME: TapeScrape
+        GENERATE_INFOPLIST_FILE: YES

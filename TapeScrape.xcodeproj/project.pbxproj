@@ -1,0 +1,604 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		08B0861523FE60748D55E18A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3E9660DEF0838CCDBD81616F /* Assets.xcassets */; };
+		2FBEC5802A824BF967F02597 /* TapeScrapeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99B156502B908A8FEBB2A8A5 /* TapeScrapeApp.swift */; };
+		429D3FC5F4AB047B4E4D4D36 /* LibraryTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB896E7AA57B9EF1A792EFDE /* LibraryTab.swift */; };
+		75650B68D659E052771C144A /* HomeTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A63285C8F3BBFB4ADDA10717 /* HomeTab.swift */; };
+		85293189AC9FE4DC5434B5E4 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64209B39C55DC7642614A513 /* DeepLinkRouter.swift */; };
+		9DE3D478325449BC06A1129E /* AudioStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2363EE6B82EE8452C78C473 /* AudioStorageTests.swift */; };
+		A02377A8C9624B8CB17BA09E /* AudioStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174E249716B863060D17C0FF /* AudioStorage.swift */; };
+		A2FA5379A576E32D3DEB90F1 /* PlaybackHistoryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B841FC2FF955539BF89979 /* PlaybackHistoryRepository.swift */; };
+		BAC2511B71B6FAA4E91519BA /* SearchTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = F192C8A6D74B860D25DC4389 /* SearchTab.swift */; };
+		BF11047921159375F7DB53DA /* Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DEFA99F6A4D9C4CC568A251 /* Tag.swift */; };
+		CE3A27B65547A2DC886A50EF /* TapeScrapeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EF1ECCEA0CED5FC7ED9C46D /* TapeScrapeUITests.swift */; };
+		DBA13DF78DC06A016626F1F4 /* TapeScrapeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91ED4F01E20CF943FB5D91F /* TapeScrapeTests.swift */; };
+		DF483AB3D07062EBF790E78E /* LibraryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B57EB0AA267C66E55BF2EDF /* LibraryRepository.swift */; };
+		F9C49A1A29A01C7F0DFCE94B /* DeepLinkRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20556997DFAE87974D38B28A /* DeepLinkRouterTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		5540CB021726C6B98A07ADD7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 45C0E76BB7FA0FB71F0F25BF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4317048092350871E3170179;
+			remoteInfo = TapeScrape;
+		};
+		79FA2EE24B84670080F92032 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 45C0E76BB7FA0FB71F0F25BF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4317048092350871E3170179;
+			remoteInfo = TapeScrape;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0889F297F82330A916AA3E47 /* TapeScrapeUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TapeScrapeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		174E249716B863060D17C0FF /* AudioStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioStorage.swift; sourceTree = "<group>"; };
+		20556997DFAE87974D38B28A /* DeepLinkRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouterTests.swift; sourceTree = "<group>"; };
+		3E9660DEF0838CCDBD81616F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		4B57EB0AA267C66E55BF2EDF /* LibraryRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRepository.swift; sourceTree = "<group>"; };
+		4D38407F91B18D7B9E001E94 /* TapeScrapeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TapeScrapeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4EF1ECCEA0CED5FC7ED9C46D /* TapeScrapeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapeScrapeUITests.swift; sourceTree = "<group>"; };
+		4F21C9AFBFBFFC962A9BD300 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		64209B39C55DC7642614A513 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
+		80B841FC2FF955539BF89979 /* PlaybackHistoryRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryRepository.swift; sourceTree = "<group>"; };
+		99B156502B908A8FEBB2A8A5 /* TapeScrapeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapeScrapeApp.swift; sourceTree = "<group>"; };
+		9DEFA99F6A4D9C4CC568A251 /* Tag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tag.swift; sourceTree = "<group>"; };
+		A63285C8F3BBFB4ADDA10717 /* HomeTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTab.swift; sourceTree = "<group>"; };
+		AB896E7AA57B9EF1A792EFDE /* LibraryTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTab.swift; sourceTree = "<group>"; };
+		B2363EE6B82EE8452C78C473 /* AudioStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioStorageTests.swift; sourceTree = "<group>"; };
+		C53903098C9D9D6EE27C2501 /* TapeScrape.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TapeScrape.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C91ED4F01E20CF943FB5D91F /* TapeScrapeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapeScrapeTests.swift; sourceTree = "<group>"; };
+		F192C8A6D74B860D25DC4389 /* SearchTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchTab.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		2EA29DD77C1AB9D623FCC360 = {
+			isa = PBXGroup;
+			children = (
+				D741D625B0C58A113914CA0A /* TapeScrape */,
+				E21879DCE554C69C0D871C29 /* TapeScrapeTests */,
+				D8C5CEF768774C8F68C2F617 /* TapeScrapeUITests */,
+				A032E9EF465633974187DFE3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		34F2376BF9D70E2B962D390D /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				9DEFA99F6A4D9C4CC568A251 /* Tag.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		3F43F51C27760D2CDC9075E8 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				4B57EB0AA267C66E55BF2EDF /* LibraryRepository.swift */,
+				80B841FC2FF955539BF89979 /* PlaybackHistoryRepository.swift */,
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		6EBBDBFEED63198971262578 /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				B2363EE6B82EE8452C78C473 /* AudioStorageTests.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		81913EB81D40F0A4E7FEF7FE /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A63285C8F3BBFB4ADDA10717 /* HomeTab.swift */,
+				AB896E7AA57B9EF1A792EFDE /* LibraryTab.swift */,
+				F192C8A6D74B860D25DC4389 /* SearchTab.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		9B51B3F92E5CFBCC6216E3DA /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				174E249716B863060D17C0FF /* AudioStorage.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		A032E9EF465633974187DFE3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C53903098C9D9D6EE27C2501 /* TapeScrape.app */,
+				4D38407F91B18D7B9E001E94 /* TapeScrapeTests.xctest */,
+				0889F297F82330A916AA3E47 /* TapeScrapeUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		ABBF18DC25408F180DC08AC1 /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				64209B39C55DC7642614A513 /* DeepLinkRouter.swift */,
+			);
+			path = Navigation;
+			sourceTree = "<group>";
+		};
+		D741D625B0C58A113914CA0A /* TapeScrape */ = {
+			isa = PBXGroup;
+			children = (
+				3E9660DEF0838CCDBD81616F /* Assets.xcassets */,
+				4F21C9AFBFBFFC962A9BD300 /* Info.plist */,
+				99B156502B908A8FEBB2A8A5 /* TapeScrapeApp.swift */,
+				34F2376BF9D70E2B962D390D /* Models */,
+				ABBF18DC25408F180DC08AC1 /* Navigation */,
+				3F43F51C27760D2CDC9075E8 /* Repositories */,
+				9B51B3F92E5CFBCC6216E3DA /* Storage */,
+				81913EB81D40F0A4E7FEF7FE /* Views */,
+			);
+			path = TapeScrape;
+			sourceTree = "<group>";
+		};
+		D8C5CEF768774C8F68C2F617 /* TapeScrapeUITests */ = {
+			isa = PBXGroup;
+			children = (
+				4EF1ECCEA0CED5FC7ED9C46D /* TapeScrapeUITests.swift */,
+			);
+			path = TapeScrapeUITests;
+			sourceTree = "<group>";
+		};
+		E21879DCE554C69C0D871C29 /* TapeScrapeTests */ = {
+			isa = PBXGroup;
+			children = (
+				C91ED4F01E20CF943FB5D91F /* TapeScrapeTests.swift */,
+				E63B512B11B8D7D88FFC4544 /* Navigation */,
+				6EBBDBFEED63198971262578 /* Storage */,
+			);
+			path = TapeScrapeTests;
+			sourceTree = "<group>";
+		};
+		E63B512B11B8D7D88FFC4544 /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				20556997DFAE87974D38B28A /* DeepLinkRouterTests.swift */,
+			);
+			path = Navigation;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		00951A001102DCD101D30E2D /* TapeScrapeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BFF2AD0E52B76D2EC53B98E9 /* Build configuration list for PBXNativeTarget "TapeScrapeTests" */;
+			buildPhases = (
+				466E76ABAE6309E82F8F7D47 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				56F2BFC5EA6285B5C0FBAC3F /* PBXTargetDependency */,
+			);
+			name = TapeScrapeTests;
+			packageProductDependencies = (
+			);
+			productName = TapeScrapeTests;
+			productReference = 4D38407F91B18D7B9E001E94 /* TapeScrapeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4317048092350871E3170179 /* TapeScrape */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A8D15A000574139723A02FBD /* Build configuration list for PBXNativeTarget "TapeScrape" */;
+			buildPhases = (
+				18129154FF6042DBD24F1868 /* Sources */,
+				654AFCDAB1F7DFA1F004E757 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TapeScrape;
+			packageProductDependencies = (
+			);
+			productName = TapeScrape;
+			productReference = C53903098C9D9D6EE27C2501 /* TapeScrape.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EE9219B6F59FC431EBFACA25 /* TapeScrapeUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9E1F1552F4238867ADF4B2AB /* Build configuration list for PBXNativeTarget "TapeScrapeUITests" */;
+			buildPhases = (
+				92465F6E4FFDC6EF36D6DE2A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1210DA2653CDBED9DCC903A6 /* PBXTargetDependency */,
+			);
+			name = TapeScrapeUITests;
+			packageProductDependencies = (
+			);
+			productName = TapeScrapeUITests;
+			productReference = 0889F297F82330A916AA3E47 /* TapeScrapeUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		45C0E76BB7FA0FB71F0F25BF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					4317048092350871E3170179 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					EE9219B6F59FC431EBFACA25 = {
+						TestTargetID = 4317048092350871E3170179;
+					};
+				};
+			};
+			buildConfigurationList = 0C95542C4D6E04D3BDA517D6 /* Build configuration list for PBXProject "TapeScrape" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2EA29DD77C1AB9D623FCC360;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4317048092350871E3170179 /* TapeScrape */,
+				00951A001102DCD101D30E2D /* TapeScrapeTests */,
+				EE9219B6F59FC431EBFACA25 /* TapeScrapeUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		654AFCDAB1F7DFA1F004E757 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				08B0861523FE60748D55E18A /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		18129154FF6042DBD24F1868 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A02377A8C9624B8CB17BA09E /* AudioStorage.swift in Sources */,
+				85293189AC9FE4DC5434B5E4 /* DeepLinkRouter.swift in Sources */,
+				75650B68D659E052771C144A /* HomeTab.swift in Sources */,
+				DF483AB3D07062EBF790E78E /* LibraryRepository.swift in Sources */,
+				429D3FC5F4AB047B4E4D4D36 /* LibraryTab.swift in Sources */,
+				A2FA5379A576E32D3DEB90F1 /* PlaybackHistoryRepository.swift in Sources */,
+				BAC2511B71B6FAA4E91519BA /* SearchTab.swift in Sources */,
+				BF11047921159375F7DB53DA /* Tag.swift in Sources */,
+				2FBEC5802A824BF967F02597 /* TapeScrapeApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		466E76ABAE6309E82F8F7D47 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9DE3D478325449BC06A1129E /* AudioStorageTests.swift in Sources */,
+				F9C49A1A29A01C7F0DFCE94B /* DeepLinkRouterTests.swift in Sources */,
+				DBA13DF78DC06A016626F1F4 /* TapeScrapeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		92465F6E4FFDC6EF36D6DE2A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE3A27B65547A2DC886A50EF /* TapeScrapeUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1210DA2653CDBED9DCC903A6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4317048092350871E3170179 /* TapeScrape */;
+			targetProxy = 5540CB021726C6B98A07ADD7 /* PBXContainerItemProxy */;
+		};
+		56F2BFC5EA6285B5C0FBAC3F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4317048092350871E3170179 /* TapeScrape */;
+			targetProxy = 79FA2EE24B84670080F92032 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		6159F04B44545A3ACA240A71 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jake.tapescrapeTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TapeScrape.app/TapeScrape";
+			};
+			name = Release;
+		};
+		6EAF9D1C557AF2336B705BFD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		727408B0AC16E12A776BDC1C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jake.tapescrapeUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = TapeScrape;
+			};
+			name = Release;
+		};
+		8124CF93A5D82C9CA759B4C8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = TapeScrape/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jake.tapescrape;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		863F2549849796E523243128 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		8E0BFFC4A7B32AA663165173 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = TapeScrape/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jake.tapescrape;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9048C3530EA81F0FFAA616EC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jake.tapescrapeTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TapeScrape.app/TapeScrape";
+			};
+			name = Debug;
+		};
+		B6B76093CB88C861344A3003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jake.tapescrapeUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = TapeScrape;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0C95542C4D6E04D3BDA517D6 /* Build configuration list for PBXProject "TapeScrape" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				863F2549849796E523243128 /* Debug */,
+				6EAF9D1C557AF2336B705BFD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9E1F1552F4238867ADF4B2AB /* Build configuration list for PBXNativeTarget "TapeScrapeUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B6B76093CB88C861344A3003 /* Debug */,
+				727408B0AC16E12A776BDC1C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A8D15A000574139723A02FBD /* Build configuration list for PBXNativeTarget "TapeScrape" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8E0BFFC4A7B32AA663165173 /* Debug */,
+				8124CF93A5D82C9CA759B4C8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BFF2AD0E52B76D2EC53B98E9 /* Build configuration list for PBXNativeTarget "TapeScrapeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9048C3530EA81F0FFAA616EC /* Debug */,
+				6159F04B44545A3ACA240A71 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 45C0E76BB7FA0FB71F0F25BF /* Project object */;
+}

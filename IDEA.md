@@ -310,3 +310,33 @@ When starting the new project repo, the first three things to do:
 3. Write a thin `SPEC.md` covering the Phase 0 deliverable only: backend endpoint signature, client screens, data models. Don't spec phases 1–5 yet.
 
 Then start Phase 0.
+
+---
+
+## 13. Resolved Decisions (pointer)
+
+Step 12.2 above is done — but the decision log lives in **one canonical place**, not
+duplicated here (a second copy is a drift vector; see
+`workflow/WORKFLOW.md` § "Discipline that survives the slimming"):
+
+> **`docs/design/04-OPEN-QUESTIONS.md`** — resolved decisions (D1–D8), what's deferred to
+> which phase, and the ambiguities still needing user input.
+
+Step 12.3's "thin SPEC.md" is superseded by the focused design package in `docs/design/`
+plus `docs/development_roadmap.md` (Phase 0 scope is its own section there).
+
+Decisions resolved with the user 2026-05-16, ahead of writing the spec:
+
+- **Backend (§7 Q2 / D2):** thin Python+FastAPI backend — IA aggregation + caching only;
+  no audio proxying.
+- **Per-track search (D2d):** scoped to opened recordings in v1; global crawl is future.
+- **Library model (D5):** unified storage + pinned flag; record-shelf feel via UI.
+- **Backend stack (§7 Q7 / D7):** Python + FastAPI + SQLite.
+- **Spec format:** focused design package (not a single SPEC.md, not the full
+  tape_scrape-style set).
+- **Workflow:** slimmed solo loop (the copied four-role package was collapsed).
+
+Still defaulted-but-confirmable or deferred (iOS minimum, backend host, CloudKit sync,
+cover-art look, setlist source, App Store "two builds") are tracked with their owners and
+deadlines in `docs/design/04-OPEN-QUESTIONS.md`. This `IDEA.md` remains the living
+*motivation* doc; it is not the decision log.
