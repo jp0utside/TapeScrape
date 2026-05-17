@@ -67,7 +67,15 @@ def test_search_items_missing_optional_fields():
 @pytest.mark.asyncio
 @pytest.mark.live_ia
 async def test_search_items_live():
-    result = await search_items(creator="Grateful Dead", date="1977-05-08")
+    from backend.core.http_client import IAClient
+
+    ia_client = IAClient()
+    try:
+        result = await search_items(
+            ia_client, creator="Grateful Dead", date="1977-05-08"
+        )
+    finally:
+        await ia_client.aclose()
     assert result.total > 0
     assert len(result.items) > 0
     assert all(item.identifier for item in result.items)

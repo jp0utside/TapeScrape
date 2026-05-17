@@ -47,6 +47,13 @@ blocking. Override anytime.
   off the home network (Phase 1 end). Inputs that decide it: do you have an always-on
   machine already; how often you use the app on cellular vs. home Wi-Fi; willingness to
   pay ~$0–10/mo. Owner: user, at Phase 1 boundary.
+  **Decision 2026-05-17 (user):** *consciously deferred* — stay on local `uvicorn`
+  through Phase 2. Phase 2 (browse/search/player) is fully developable and testable on
+  home Wi-Fi; no host is needed for the phase to be usable as the roadmap promises. The
+  host pick itself remains open with a concrete **revisit trigger: the first time the app
+  needs to be reachable off home Wi-Fi** (cellular / away from home). This is the
+  Phase-1-boundary decision the roadmap asked for — the decision is "not yet, and here is
+  exactly when." No backend code depends on it.
 - **D3 — CloudKit sync vs local-only.** v1 is **local-only**; the only v1 cost paid now
   is a custom-zone-shaped library container so a future `LibraryZone`/shared zones (F8)
   need no migration. Decide at Phase 3 (library). Inputs: how many Apple devices run it;
@@ -73,12 +80,14 @@ blocking. Override anytime.
    keep it a feature-flag, decide at the TestFlight/submission phase if review rejects a
    downloads-capable build. *Owner: user, at Phase 6.* No v1 work beyond clean feature-
    flag hygiene.
-4. **Re-aggregation trigger.** Concerts are persisted and re-aggregated "when new items
-   appear" — by what mechanism? Options: on-demand when a stale artist is browsed; a
-   periodic per-followed-artist job; manual. Not architecture-forking (all are server-
-   side, behind the same persisted-concert model) but needs a call when aggregation
-   lands. *Owner: orchestrator at the aggregation phase; default: on-demand-when-stale,
-   simplest for single-user scale.*
+4. **Re-aggregation trigger — RESOLVED 2026-05-17: on-demand-when-stale.** Concerts are
+   persisted and re-aggregated "when new items appear." Decision (orchestrator, user-
+   confirmed): when an artist is browsed, re-aggregate iff the persisted aggregation for
+   that artist is older than a configurable TTL; otherwise serve persisted concerts.
+   Simplest for single-user scale; no background scheduler, no extra infra. Manual /
+   periodic mechanisms remain additive behind the same persisted-concert model if ever
+   needed. Original framing kept for history: options were on-demand-when-stale (chosen),
+   periodic per-followed-artist job, manual.
 
 ## How to use this doc
 

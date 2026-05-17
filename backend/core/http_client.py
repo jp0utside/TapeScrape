@@ -34,11 +34,14 @@ class IAClient:
         cache_hit: bool = False,
     ) -> httpx.Response:
         async with self._lock:
-            now = time.monotonic()
-            wait = self._min_interval - (now - self._last_request_at)
-            if wait > 0:
-                await asyncio.sleep(wait)
-            self._last_request_at = time.monotonic()
+            scheduled = max(
+                time.monotonic(), self._last_request_at + self._min_interval
+            )
+            self._last_request_at = scheduled
+
+        delay = scheduled - time.monotonic()
+        if delay > 0:
+            await asyncio.sleep(delay)
 
         logger.info("ia_request url=%s%s cache_hit=%s", settings.ia_base_url, path, cache_hit)
         response = await self._client.get(path, params=params)

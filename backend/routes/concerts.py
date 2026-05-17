@@ -1,12 +1,14 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.core.cache import MetadataCache
 from backend.core.config import settings
+from backend.core.http_client import IAClient
 from backend.core.logging import get_logger
 from backend.ia.metadata import get_item_metadata
 from backend.ia.search import search_items
 from backend.models.concert import ConcertResponse, RecordingResponse, TrackResponse
 from backend.models.ia import IAFile, IAItem
+from backend.routes.deps import get_ia_client
 
 logger = get_logger(__name__)
 
@@ -59,7 +61,7 @@ def _build_tracks(identifier: str, files: list[IAFile]) -> list[TrackResponse]:
     ]
 
 
-async def _fetch_item(identifier: str) -> IAItem:
+async def _fetch_item(client: IAClient, identifier: str) -> IAItem:
     """Return IAItem from cache if present; otherwise fetch from IA and cache."""
     cached = await _cache.get(identifier)
     if cached is not None:
@@ -67,7 +69,7 @@ async def _fetch_item(identifier: str) -> IAItem:
         return IAItem.model_validate(cached)
 
     logger.info("cache_miss identifier=%s", identifier)
-    item = await get_item_metadata(identifier)
+    item = await get_item_metadata(client, identifier)
     # Store the raw validated data back as a dict for the cache.
     await _cache.set(identifier, item.model_dump())
     return item
@@ -86,12 +88,16 @@ def _recording_from_item(item: IAItem, download_count: int) -> RecordingResponse
 
 
 @router.get("/{concert_id}", response_model=ConcertResponse)
-async def get_concert(concert_id: str) -> ConcertResponse:
+async def get_concert(
+    concert_id: str,
+    ia_client: IAClient = Depends(get_ia_client),
+) -> ConcertResponse:
     params = _CONCERT_MAP.get(concert_id)
     if params is None:
         raise HTTPException(status_code=404, detail=f"Concert '{concert_id}' not found")
 
     search_result = await search_items(
+        ia_client,
         creator=params["creator"],
         date=params["date"],
         rows=50,
@@ -108,7 +114,7 @@ async def get_concert(concert_id: str) -> ConcertResponse:
     recordings: list[RecordingResponse] = []
     top_meta = None
     for i, search_item in enumerate(top_items):
-        item = await _fetch_item(search_item.identifier)
+        item = await _fetch_item(ia_client, search_item.identifier)
         if i == 0:
             top_meta = item.metadata
         recordings.append(_recording_from_item(item, search_item.downloads))
