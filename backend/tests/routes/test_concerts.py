@@ -5,9 +5,24 @@ from fastapi.testclient import TestClient
 
 from backend.main import app
 from backend.models.ia import IAItem, IASearchItem, IASearchResult
+from backend.routes.concerts import get_ia_client
 from backend.tests.helpers import load_fixture
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _override_ia_client(request):
+    """Module-scope TestClient doesn't run the lifespan, so app.state.ia_client
+    is unset. Non-live tests fully mock the IA layer, so inject a dummy that is
+    never used. Live tests run the real lifespan via `with TestClient(app)`.
+    """
+    if request.node.get_closest_marker("live_ia"):
+        yield
+        return
+    app.dependency_overrides[get_ia_client] = lambda: object()
+    yield
+    app.dependency_overrides.pop(get_ia_client, None)
 
 _CONCERT_ID = "gd-1977-05-08"
 _METADATA_FIXTURE = "gd1977-05-08.aud.moore.berger.28354.flac16_metadata.json"
@@ -107,10 +122,41 @@ def test_preferred_recording_id_matches_first_recording():
     assert body["preferred_recording_id"] == body["recordings"][0]["identifier"]
 
 
+def test_response_contract_unchanged():
+    """Lock the /concerts/{id} contract: exact key structure must not drift."""
+    with _patched_concert(_make_search_result(), _make_ia_item()):
+        body = client.get(f"/concerts/{_CONCERT_ID}").json()
+    assert set(body) == {
+        "id",
+        "artist",
+        "date",
+        "venue",
+        "location",
+        "preferred_recording_id",
+        "recordings",
+    }
+    rec = body["recordings"][0]
+    assert set(rec) == {
+        "identifier",
+        "source",
+        "taper",
+        "lineage",
+        "download_count",
+        "tracks",
+    }
+    track = rec["tracks"][0]
+    assert set(track) == {"index", "title", "filename", "duration", "stream_url"}
+
+
 @pytest.mark.live_ia
-async def test_concert_endpoint_live():
-    """Hits real IA — skipped by default; run with pytest -m live_ia."""
-    response = client.get(f"/concerts/{_CONCERT_ID}")
+def test_concert_endpoint_live():
+    """Hits real IA — skipped by default; run with pytest -m live_ia.
+
+    Uses `with TestClient(app)` so the lifespan builds the real IAClient
+    (the autouse override deliberately skips live-marked tests).
+    """
+    with TestClient(app) as live_client:
+        response = live_client.get(f"/concerts/{_CONCERT_ID}")
     assert response.status_code == 200
     body = response.json()
     assert body["id"] == _CONCERT_ID

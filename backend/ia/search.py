@@ -1,13 +1,13 @@
 from backend.core.http_client import IAClient
 from backend.models.ia import IASearchItem, IASearchResult
 
-_client = IAClient()
-
 _SEARCH_FIELDS = ["identifier", "title", "creator", "date", "downloads"]
 _BASE_QUERY = "collection:etree AND NOT collection:stream_only"
 
 
 async def search_items(
+    client: IAClient,
+    *,
     query: str | None = None,
     creator: str | None = None,
     date: str | None = None,
@@ -30,7 +30,7 @@ async def search_items(
         "output": "json",
     }
 
-    response = await _client.get("/advancedsearch.php", params=params)
+    response = await client.get("/advancedsearch.php", params=params)
     data = response.json()
     response_body = data.get("response", {})
     docs = response_body.get("docs", [])

@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from backend.core.http_client import IAClient
 from backend.core.logging import setup_logging
 from backend.routes.concerts import router as concerts_router
 
@@ -9,7 +10,11 @@ from backend.routes.concerts import router as concerts_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
-    yield
+    app.state.ia_client = IAClient()
+    try:
+        yield
+    finally:
+        await app.state.ia_client.aclose()
 
 
 app = FastAPI(title="TapeScrape", lifespan=lifespan)

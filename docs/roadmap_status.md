@@ -13,9 +13,10 @@ stand. It is *not* an architecture doc — that's `docs/design/`; not sequencing
 
 ## Current state
 
-- **Phase:** 1 — COMPLETE. Ready for Phase 2 planning.
+- **Phase:** 2 — planning (2026-05-17). Phase 1 COMPLETE + reviewed.
 - **Repo:** Phase 1 complete. One concert (GD 1977-05-08) streams end-to-end: backend fetches/caches IA metadata, client plays audio directly from archive.org.
-- **Next action:** Plan Phase 2 (browse/search/player).
+- **Next action:** Write Phase 2 packet `02-001` (backend artist search → recordings + canonical artist key). Review-gated fix `01.5-001` is COMPLETE — parallel aggregation is unblocked.
+- **Phase 2 decisions (2026-05-17):** D2b backend host → *consciously deferred*, stay local through Phase 2 (revisit trigger: first off-home-Wi-Fi need). Re-aggregation trigger → on-demand-when-stale. See `docs/design/04-OPEN-QUESTIONS.md`.
 
 ### Phase 0 packet plan
 
@@ -34,13 +35,26 @@ stand. It is *not* an architecture doc — that's `docs/design/`; not sequencing
 | `01-002-concert-endpoint` | `/concerts/{id}` endpoint returning parsed recordings + tracks for the test concert; persistent cache wired | COMPLETE |
 | `01-003-client-playback` | Client screen showing recordings/tracks for the test concert; tap a track → AVPlayer streams from IA | COMPLETE |
 
+### Phase 2 packet plan
+
+Sequenced loosely (roadmap warns against over-speccing); only the first packet is firm.
+Aggregation packets depend on the fix packet landing first.
+
+| Packet | Deliverable | Status |
+|---|---|---|
+| `01.5-001-iaclient-di` | Single `IAClient` via FastAPI lifespan + DI; non-serializing rate limiter (closes F1-2, F1-5/F0-2). Prerequisite for parallel aggregation | COMPLETE |
+| `02-001` (tentative) | Backend: artist search → recordings; canonical artist key | not written |
+| `02-002` (tentative) | Backend: aggregation (venue clustering, concert key, persist, preferred pick) | not written |
+| `02-003` (tentative) | Backend: `/concerts?artist=` list endpoint + on-demand-when-stale re-aggregation | not written |
+| `02-004+` (tentative) | Client: search screen, concert list, detail best-first, full-screen NowPlaying, playback state machine | not written |
+
 ## Phase status
 
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Set the stage | COMPLETE | all 4 packets done 2026-05-16; boundary review passed 2026-05-16 (1 blocking follow-up resolved: README updated) |
 | 1 — One concert E2E | COMPLETE | started 2026-05-16; all 3 packets done 2026-05-16; boundary review passed 2026-05-16 (1 blocking follow-up: README update) |
-| 2 — Browse/search/player | NOT STARTED | |
+| 2 — Browse/search/player | PLANNING | started 2026-05-17; decisions resolved (D2b deferred-local, re-aggregation on-demand-when-stale); first packet = review-gated fix `01.5-001` |
 | 3 — Library/queue | NOT STARTED | |
 | 4 — Downloads/offline | NOT STARTED | |
 | 5 — Cover art | NOT STARTED | |
@@ -66,6 +80,7 @@ decision history are written by Review/Plan, never by Build. Format:
 | `01-001-ia-metadata` | COMPLETE | ia/search.py + ia/metadata.py + models/ia.py; Ogg/Shorten filtered at parse; 10 tests pass (2 live_ia skipped); fixtures from real IA GD 1977-05-08 | summary: `workflow/packets/01-001-ia-metadata.summary.md` | Fixture identifier differs from packet spec (stream_only item returned {}; used aud.moore.berger.28354 instead); load_fixture in tests/helpers.py not conftest.py; IAItem.model_validate used end-to-end |
 | `01-002-concert-endpoint` | COMPLETE | GET /concerts/{id} route; MetadataCache (sqlite3); ConcertResponse/RecordingResponse/TrackResponse; 24 tests pass (3 live_ia skipped); track dedup by format rank | summary: `workflow/packets/01-002-concert-endpoint.summary.md` | Tests patch _fetch_item rather than _cache+get_item_metadata separately (cleaner isolation); double-fetch of top item eliminated in route |
 | `01-003-client-playback` | COMPLETE | CatalogClient actor; PlaybackCoordinator + PlayerBackend protocol; ConcertDetailView + MiniPlayerView; HomeTab fetches Cornell '77; AVAudioSession + UIBackgroundModes; 26 Swift tests pass | summary: `workflow/packets/01-003-client-playback.summary.md` | loading state is pass-through in Phase 1 (KVO observation Phase 2); PlayerBackend.replaceAndPlay(url:) keeps AVFoundation out of test mock |
+| `01.5-001-iaclient-di` | COMPLETE | Single `IAClient` in FastAPI lifespan + `Depends`-injected; rate-limiter lock now O(1) (sleep+HTTP outside it); two module singletons removed; 28 pass + 3 live_ia skipped | summary: `workflow/packets/01.5-001-iaclient-di.summary.md` | Phase-1 lock spanned only `asyncio.sleep` (not HTTP) — fix + retuned concurrency test still apply; cache singleton (`concerts.py:15`) left as future fix per scope |
 
 ## Phase 1 boundary review (2026-05-16)
 
@@ -139,12 +154,15 @@ authoritative; this is the at-a-glance tracker.
 - ~~**D1 (minimum iOS)**~~ — RESOLVED 2026-05-16: iOS 17.
 - ~~**Setlist source**~~ — RESOLVED 2026-05-16: IA-description parse only for v1; revisit
   only if insufficient in use.
-- **D2b (backend host)** — user input, by end of Phase 1.
+- ~~**D2b (backend host)**~~ — RESOLVED 2026-05-17: consciously deferred — stay local
+  through Phase 2; revisit trigger = first off-home-Wi-Fi need. No backend code depends
+  on it. See `docs/design/04-OPEN-QUESTIONS.md`.
 - **D3 (CloudKit vs local)** — user input, by Phase 3. Default local-only.
 - **Library subset depth** — user input, by Phase 3. Default favorites + minimal
   playlists.
-- **Re-aggregation trigger** — Plan-mode call at the aggregation phase. Default
-  on-demand-when-stale.
+- ~~**Re-aggregation trigger**~~ — RESOLVED 2026-05-17: on-demand-when-stale
+  (re-aggregate an artist on browse iff its persisted aggregation is older than a
+  configurable TTL). See `docs/design/04-OPEN-QUESTIONS.md` ambiguity 4.
 - **D6 (cover-art look)** — user reference points, by Phase 5.
 - **"Two builds"** — user, by Phase 6; only if review rejects a downloads-capable build.
 
@@ -156,3 +174,7 @@ authoritative; this is the at-a-glance tracker.
 - **2026-05-16 (follow-up)** — D1 confirmed iOS 17 (no older-device requirement);
   setlist source confirmed IA-description-only for v1. Phase 0 fully unblocked. See
   `docs/design/04-OPEN-QUESTIONS.md` § Resolved.
+- **2026-05-17 (Phase 2 planning)** — D2b backend host *consciously deferred* (user):
+  stay on local `uvicorn` through Phase 2; revisit trigger = first off-home-Wi-Fi need.
+  Re-aggregation trigger resolved on-demand-when-stale (orchestrator, user-confirmed).
+  First Phase 2 packet is the review-gated fix `01.5-001-iaclient-di` (F1-2 + F1-5/F0-2).

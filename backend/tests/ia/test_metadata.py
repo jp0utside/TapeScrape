@@ -67,9 +67,14 @@ def test_file_fields_present():
 @pytest.mark.asyncio
 @pytest.mark.live_ia
 async def test_get_item_metadata_live():
+    from backend.core.http_client import IAClient
     from backend.ia.metadata import get_item_metadata
 
-    item = await get_item_metadata(_FIXTURE_IDENTIFIER)
+    ia_client = IAClient()
+    try:
+        item = await get_item_metadata(ia_client, _FIXTURE_IDENTIFIER)
+    finally:
+        await ia_client.aclose()
     assert item.metadata.identifier == _FIXTURE_IDENTIFIER
     assert len(item.files) > 0
     formats = {f.format for f in item.files}
