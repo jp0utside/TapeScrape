@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
 
 
@@ -7,6 +9,7 @@ class Settings(BaseSettings):
     ia_base_url: str = "https://archive.org"
     api_secret: str | None = None
     ia_rate_limit: float = 1.0  # max requests per second to IA
+    cache_db_path: Path = Path("./tapescrape_cache.db")
 
     model_config = {"env_prefix": "TAPESCRAPE_"}
 

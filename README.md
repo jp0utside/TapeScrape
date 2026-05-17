@@ -9,11 +9,14 @@ a preferred default recording (tap to play, no version-picker gate), a real full
 player with legible playback state, first-class offline downloads, and a tag-first
 library. Personal-use first; not an AI project at v1.
 
-> **Status: Phase 1 (one concert, end to end).** Phase 0 complete — the Xcode project
-> builds, the four forward-compatibility hooks are installed, and the FastAPI backend
-> skeleton runs locally. No streaming, browsing, or library features exist yet. This
-> README describes only what is shipped; the predecessor (`set-scrape`) shipped a README
-> claiming features that didn't exist, and avoiding that is an explicit project rule.
+> **Status: Phase 1 complete (one concert, end to end).** The app streams live audio
+> from the Internet Archive for one hardcoded concert (GD 1977-05-08 Cornell '77). The
+> FastAPI backend fetches and caches IA metadata, returns recordings and track lists with
+> opaque stream URLs; the iOS client displays them and plays via AVPlayer directly from
+> `archive.org`. Background audio, play/pause, and a mini-player bar work. No browsing,
+> search, library, or download features exist yet. This README describes only what is
+> shipped; the predecessor (`set-scrape`) shipped a README claiming features that didn't
+> exist, and avoiding that is an explicit project rule.
 
 ## Architecture in one paragraph
 

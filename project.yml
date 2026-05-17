@@ -39,6 +39,8 @@ targets:
           - CFBundleURLName: com.jake.tapescrape
             CFBundleURLSchemes:
               - tapescrape
+        UIBackgroundModes:
+          - audio
 
   TapeScrapeTests:
     type: bundle.unit-test

@@ -28,7 +28,7 @@ Two codebases. Boundaries follow `docs/design/00-ARCHITECTURE.md`.
 | `models/` (Pydantic API + dataclasses) | core |
 | `ia/` (Advanced Search + Metadata clients, parsing) | core, models |
 | `aggregation/` (canonicalization, grouping, preferred pick) | core, models, ia |
-| `api/` (FastAPI routes) | all of the above |
+| `routes/` (FastAPI routes) | all of the above |
 
 Circular imports are forbidden. `core/config` and `core/logging` are exempt (any layer).
 
@@ -121,6 +121,32 @@ Replace with persistence-backed implementations in later phases; the async proto
 signatures accommodate both.
 
 _Appeared in: 00-002-four-hooks (`InMemoryLibraryRepository`, `InMemoryPlaybackHistoryRepository`)._
+
+## 12. Pydantic response models on the API surface
+
+Route handlers return Pydantic `BaseModel` subclasses declared in `models/`. Internal
+data moves as validated Pydantic models (not raw dicts). Use `response_model=` on the
+route decorator for OpenAPI documentation.
+
+_Appeared in: 01-001-ia-metadata (`models/ia.py`), 01-002-concert-endpoint
+(`models/concert.py`)._
+
+## 13. Fixture-based integration tests via TestClient
+
+Route tests patch the data-fetching layer (not the cache or HTTP internals) and exercise
+the full response assembly through `TestClient`. Separate unit tests cover lower layers
+in isolation. Fixtures are captured from real IA responses, not hand-fabricated.
+
+_Appeared in: 01-002-concert-endpoint (`test_concerts.py` patches `_fetch_item`),
+01-001-ia-metadata (fixture-based unit tests for `ia/` modules)._
+
+## 14. PlayerBackend protocol for testable playback
+
+`PlaybackCoordinator` accepts any `PlayerBackend` conformer; tests inject a mock that
+records calls without importing AVFoundation. Production uses `AVPlayerBackend`.
+
+_Appeared in: 01-003-client-playback (`PlaybackCoordinator.swift`,
+`PlaybackCoordinatorTests.swift`)._
 
 ---
 
