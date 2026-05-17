@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.core.cache import MetadataCache
 from backend.core.config import settings
@@ -8,22 +8,13 @@ from backend.ia.metadata import get_item_metadata
 from backend.ia.search import search_items
 from backend.models.concert import ConcertResponse, RecordingResponse, TrackResponse
 from backend.models.ia import IAFile, IAItem
+from backend.routes.deps import get_ia_client
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/concerts")
 
 _cache = MetadataCache(settings.cache_db_path)
-
-
-def get_ia_client(request: Request) -> IAClient:
-    """FastAPI dependency: the single IAClient built in the app lifespan.
-
-    Lives here (not in core/) because core/ may import only stdlib + Pydantic
-    (CONVENTIONS §1). Promote to a shared routes/deps.py when a second route
-    needs it (Phase 2) — not before.
-    """
-    return request.app.state.ia_client
 
 # Phase 1: hardcoded map of slug → IA search parameters.
 # Phase 2 replaces this with real aggregation + UUID concert IDs.

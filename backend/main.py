@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from backend.core.http_client import IAClient
 from backend.core.logging import setup_logging
 from backend.routes.concerts import router as concerts_router
+from backend.routes.search import router as search_router
 
 
 @asynccontextmanager
@@ -20,6 +21,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="TapeScrape", lifespan=lifespan)
 
 app.include_router(concerts_router)
+app.include_router(search_router)
 
 
 @app.get("/health")

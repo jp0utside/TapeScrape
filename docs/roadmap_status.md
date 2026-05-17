@@ -15,7 +15,7 @@ stand. It is *not* an architecture doc — that's `docs/design/`; not sequencing
 
 - **Phase:** 2 — planning (2026-05-17). Phase 1 COMPLETE + reviewed.
 - **Repo:** Phase 1 complete. One concert (GD 1977-05-08) streams end-to-end: backend fetches/caches IA metadata, client plays audio directly from archive.org.
-- **Next action:** Write Phase 2 packet `02-001` (backend artist search → recordings + canonical artist key). Review-gated fix `01.5-001` is COMPLETE — parallel aggregation is unblocked.
+- **Next action:** Write Phase 2 packet `02-002` (concert grouping: canonical venue clustering, concert key, persist `Concert`/`Recording`/`Track`, `SourceQuality`, preferred-recording pick). Builds on `aggregation/canonicalize.py` + the search/cache layer from `02-001`.
 - **Phase 2 decisions (2026-05-17):** D2b backend host → *consciously deferred*, stay local through Phase 2 (revisit trigger: first off-home-Wi-Fi need). Re-aggregation trigger → on-demand-when-stale. See `docs/design/04-OPEN-QUESTIONS.md`.
 
 ### Phase 0 packet plan
@@ -43,7 +43,7 @@ Aggregation packets depend on the fix packet landing first.
 | Packet | Deliverable | Status |
 |---|---|---|
 | `01.5-001-iaclient-di` | Single `IAClient` via FastAPI lifespan + DI; non-serializing rate limiter (closes F1-2, F1-5/F0-2). Prerequisite for parallel aggregation | COMPLETE |
-| `02-001-artist-search` | Backend: `GET /search?type=artist` + canonical artist key + search cache | READY |
+| `02-001-artist-search` | Backend: `GET /search?type=artist` + canonical artist key + search cache | COMPLETE |
 | `02-002` (tentative) | Backend: aggregation (venue clustering, concert key, persist, preferred pick) | not written |
 | `02-003` (tentative) | Backend: `/concerts?artist=` list endpoint + on-demand-when-stale re-aggregation | not written |
 | `02-004+` (tentative) | Client: search screen, concert list, detail best-first, full-screen NowPlaying, playback state machine | not written |
@@ -81,7 +81,7 @@ decision history are written by Review/Plan, never by Build. Format:
 | `01-002-concert-endpoint` | COMPLETE | GET /concerts/{id} route; MetadataCache (sqlite3); ConcertResponse/RecordingResponse/TrackResponse; 24 tests pass (3 live_ia skipped); track dedup by format rank | summary: `workflow/packets/01-002-concert-endpoint.summary.md` | Tests patch _fetch_item rather than _cache+get_item_metadata separately (cleaner isolation); double-fetch of top item eliminated in route |
 | `01-003-client-playback` | COMPLETE | CatalogClient actor; PlaybackCoordinator + PlayerBackend protocol; ConcertDetailView + MiniPlayerView; HomeTab fetches Cornell '77; AVAudioSession + UIBackgroundModes; 26 Swift tests pass | summary: `workflow/packets/01-003-client-playback.summary.md` | loading state is pass-through in Phase 1 (KVO observation Phase 2); PlayerBackend.replaceAndPlay(url:) keeps AVFoundation out of test mock |
 | `01.5-001-iaclient-di` | COMPLETE | Single `IAClient` in FastAPI lifespan + `Depends`-injected; rate-limiter lock now O(1) (sleep+HTTP outside it); two module singletons removed; 28 pass + 3 live_ia skipped | summary: `workflow/packets/01.5-001-iaclient-di.summary.md` | Phase-1 lock spanned only `asyncio.sleep` (not HTTP) — fix + retuned concurrency test still apply; cache singleton (`concerts.py:15`) left as future fix per scope |
-| `02-001-artist-search` | READY | `GET /search?type=artist` resolving messy IA `creator` → canonical artists; `aggregation/canonicalize.py`; `search_cache`; promote `get_ia_client` to `routes/deps.py` | summary: `workflow/packets/02-001-artist-search.summary.md` | — |
+| `02-001-artist-search` | COMPLETE | `GET /search?type=artist` collapses messy IA `creator` → canonical artists; `aggregation/canonicalize.py` (pure, §5.1); `SearchCache`; `get_ia_client` promoted to `routes/deps.py`; concert/track → honest 501; 62 pass + 3 live_ia skipped | summary: `workflow/packets/02-001-artist-search.summary.md` | Dropped one off-spec HTML-entity test case; both caches now module-global in 2 places — natural trigger for the recorded app.state follow-up at Phase 2 review |
 
 ## Phase 1 boundary review (2026-05-16)
 
