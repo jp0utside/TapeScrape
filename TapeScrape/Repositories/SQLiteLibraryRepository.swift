@@ -5,78 +5,18 @@ import SQLite3
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 // SQLite-backed LibraryRepository. Uses the stdlib sqlite3 C API (no ORM).
-// All SQL is parameterized. Schema creation is idempotent.
-// The system "favorite" tag is seeded once on first open.
+// All SQL is parameterized. Connection and schema are owned by LibraryDatabase.
 actor SQLiteLibraryRepository: LibraryRepository {
-    // nonisolated(unsafe): actor serializes all access; deinit has exclusive ownership.
+    // nonisolated(unsafe): actor serializes all access; LibraryDatabase owns close.
     nonisolated(unsafe) private var db: OpaquePointer?
 
-    init(dbURL: URL) {
-        if sqlite3_open(dbURL.path, &db) != SQLITE_OK {
-            db = nil
-            return
-        }
-        // Static helpers run synchronously in init before the actor is reachable
-        // from outside, so Swift 6 isolation is satisfied.
-        SQLiteLibraryRepository.createTables(db)
+    init(database: LibraryDatabase) {
+        db = database.pointer
+        // Static helper runs synchronously before the actor is reachable from outside.
         SQLiteLibraryRepository.seedFavoriteTag(db)
     }
 
-    deinit {
-        sqlite3_close(db)
-    }
-
     // MARK: - Schema (static — safe to call from init)
-
-    private static func createTables(_ db: OpaquePointer?) {
-        let stmts = [
-            """
-            CREATE TABLE IF NOT EXISTS tags (
-                id   TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                kind TEXT NOT NULL
-            );
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS tagged_items (
-                tag_id  TEXT NOT NULL,
-                item_id TEXT NOT NULL,
-                PRIMARY KEY (tag_id, item_id)
-            );
-            """,
-            // Denormalized concert display data so LibraryTab needs no network call.
-            """
-            CREATE TABLE IF NOT EXISTS concert_snapshots (
-                id       TEXT PRIMARY KEY,
-                artist   TEXT NOT NULL,
-                date     TEXT NOT NULL,
-                venue    TEXT,
-                location TEXT
-            );
-            """,
-            // Denormalized playlist track data — enough to display and play without a network call.
-            """
-            CREATE TABLE IF NOT EXISTS playlist_items (
-                playlist_id          TEXT NOT NULL,
-                recording_identifier TEXT NOT NULL,
-                track_filename       TEXT NOT NULL,
-                stream_url           TEXT NOT NULL,
-                track_title          TEXT,
-                track_duration       TEXT,
-                track_index          INT  NOT NULL DEFAULT 0,
-                sort_order           INT  NOT NULL,
-                concert_id           TEXT,
-                artist               TEXT,
-                date                 TEXT,
-                venue                TEXT,
-                PRIMARY KEY (playlist_id, sort_order)
-            );
-            """
-        ]
-        for sql in stmts {
-            sqlite3_exec(db, sql, nil, nil, nil)
-        }
-    }
 
     private static func seedFavoriteTag(_ db: OpaquePointer?) {
         let sql = "INSERT OR IGNORE INTO tags (id, name, kind) VALUES (?, ?, ?);"
@@ -119,7 +59,7 @@ actor SQLiteLibraryRepository: LibraryRepository {
         sqlite3_bind_text(stmt, 1, tag.id.uuidString, -1, SQLITE_TRANSIENT)
         sqlite3_bind_text(stmt, 2, tag.name, -1, SQLITE_TRANSIENT)
         sqlite3_bind_text(stmt, 3, tag.kind.rawValue, -1, SQLITE_TRANSIENT)
-        sqlite3_step(stmt)
+        checkedStep(stmt, context: "addTag")
     }
 
     func removeTag(_ id: Tag.ID) async throws {
@@ -217,7 +157,7 @@ actor SQLiteLibraryRepository: LibraryRepository {
         sqlite3_bind_text(stmt, 1, tag.id.uuidString, -1, SQLITE_TRANSIENT)
         sqlite3_bind_text(stmt, 2, tag.name, -1, SQLITE_TRANSIENT)
         sqlite3_bind_text(stmt, 3, tag.kind.rawValue, -1, SQLITE_TRANSIENT)
-        sqlite3_step(stmt)
+        checkedStep(stmt, context: "createPlaylist")
         return tag
     }
 
@@ -297,7 +237,14 @@ actor SQLiteLibraryRepository: LibraryRepository {
         sqlite3_bind_text(stmt, 3, s.date, -1, SQLITE_TRANSIENT)
         bindNullableText(stmt, index: 4, value: s.venue)
         bindNullableText(stmt, index: 5, value: s.location)
-        sqlite3_step(stmt)
+        checkedStep(stmt, context: "upsertSnapshot")
+    }
+
+    private func checkedStep(_ stmt: OpaquePointer?, context: String) {
+        let rc = sqlite3_step(stmt)
+        if rc != SQLITE_DONE {
+            print("[LibrarySQLite] \(context) failed: rc=\(rc)")
+        }
     }
 
     private func exec(_ sql: String, _ params: String...) {
@@ -307,7 +254,7 @@ actor SQLiteLibraryRepository: LibraryRepository {
         for (i, p) in params.enumerated() {
             sqlite3_bind_text(stmt, Int32(i + 1), p, -1, SQLITE_TRANSIENT)
         }
-        sqlite3_step(stmt)
+        checkedStep(stmt, context: sql)
     }
 
     private func bindNullableText(_ stmt: OpaquePointer?, index: Int32, value: String?) {
@@ -386,7 +333,7 @@ actor SQLiteLibraryRepository: LibraryRepository {
         bindNullableText(stmt, index: 10, value: item.artist)
         bindNullableText(stmt, index: 11, value: item.date)
         bindNullableText(stmt, index: 12, value: item.venue)
-        sqlite3_step(stmt)
+        checkedStep(stmt, context: "insertPlaylistItem")
     }
 
     private func rewritePlaylistItems(_ items: [PlaylistItem], playlistID: String) {

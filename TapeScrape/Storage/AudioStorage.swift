@@ -2,8 +2,10 @@ import Foundation
 
 protocol AudioStorage {
     func url(for identifier: String, file: String) -> URL?
+    func fileExists(identifier: String, file: String) -> Bool
     func store(_ data: Data, identifier: String, file: String) throws
     func delete(identifier: String, file: String) throws
+    func deleteRecording(identifier: String) throws
     func usage() throws -> UInt64
 }
 
@@ -20,6 +22,11 @@ struct DocumentsAudioStorage: AudioStorage {
         root.appendingPathComponent(identifier).appendingPathComponent(file)
     }
 
+    func fileExists(identifier: String, file: String) -> Bool {
+        guard let path = url(for: identifier, file: file)?.path else { return false }
+        return FileManager.default.fileExists(atPath: path)
+    }
+
     func store(_ data: Data, identifier: String, file: String) throws {
         let dir = root.appendingPathComponent(identifier)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -29,6 +36,12 @@ struct DocumentsAudioStorage: AudioStorage {
     func delete(identifier: String, file: String) throws {
         guard let target = url(for: identifier, file: file) else { return }
         try FileManager.default.removeItem(at: target)
+    }
+
+    func deleteRecording(identifier: String) throws {
+        let dir = root.appendingPathComponent(identifier)
+        guard FileManager.default.fileExists(atPath: dir.path) else { return }
+        try FileManager.default.removeItem(at: dir)
     }
 
     func usage() throws -> UInt64 {

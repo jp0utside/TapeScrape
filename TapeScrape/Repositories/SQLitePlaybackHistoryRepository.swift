@@ -4,36 +4,11 @@ import SQLite3
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 actor SQLitePlaybackHistoryRepository: PlaybackHistoryRepository {
+    // nonisolated(unsafe): actor serializes all access; LibraryDatabase owns close.
     nonisolated(unsafe) private var db: OpaquePointer?
 
-    init(dbURL: URL) {
-        if sqlite3_open(dbURL.path, &db) != SQLITE_OK {
-            db = nil
-            return
-        }
-        SQLitePlaybackHistoryRepository.createTable(db)
-    }
-
-    deinit {
-        sqlite3_close(db)
-    }
-
-    // MARK: - Schema
-
-    private static func createTable(_ db: OpaquePointer?) {
-        let sql = """
-            CREATE TABLE IF NOT EXISTS playback_history (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                identifier  TEXT NOT NULL,
-                track_file  TEXT NOT NULL,
-                played_at   REAL NOT NULL,
-                concert_id  TEXT NOT NULL,
-                artist      TEXT NOT NULL,
-                date        TEXT NOT NULL,
-                venue       TEXT
-            );
-            """
-        sqlite3_exec(db, sql, nil, nil, nil)
+    init(database: LibraryDatabase) {
+        db = database.pointer
     }
 
     // MARK: - PlaybackHistoryRepository
@@ -59,7 +34,10 @@ actor SQLitePlaybackHistoryRepository: PlaybackHistoryRepository {
         } else {
             sqlite3_bind_null(stmt, 7)
         }
-        sqlite3_step(stmt)
+        let rc = sqlite3_step(stmt)
+        if rc != SQLITE_DONE {
+            print("[LibrarySQLite] recordPlay failed: rc=\(rc)")
+        }
     }
 
     func recentPlays(limit: Int) async -> [PlayRecord] {

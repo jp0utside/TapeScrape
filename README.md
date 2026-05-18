@@ -9,24 +9,28 @@ a preferred default recording (tap to play, no version-picker gate), a real full
 player with legible playback state, first-class offline downloads, and a tag-first
 library. Personal-use first; not an AI project at v1.
 
-> **Status: Phase 3 complete (library, queue, and dynamic browse).** Builds on Phase 2's
-> search/browse/player with an on-device, tag-first library: heart a concert (persisted
-> in SQLite), cross-concert playlists (create / add / reorder / play / delete), real
-> queue management (play-next / add-to-end / reorder / remove), a dynamic Home (Recently
-> Played, On This Day favorited-show anniversaries, Artists You Listen To) and Library
-> tab, and scoped per-track search over the catalog you've already browsed. Library data
-> is local-only (D3 resolved: CloudKit deferred, additive, no migration). Earlier phases
-> still hold: the FastAPI backend canonicalizes messy IA `creator`/venue strings,
-> aggregates taper uploads into persisted canonical concerts (SQLite) with a computed
-> preferred recording, serves paginated list/detail with opaque stream URLs, and
-> re-aggregates on-demand when stale; the iOS client has debounced artist search, concert
-> list/detail, sequential playback with a full-screen NowPlaying view (scrubber, track
-> list), mini-player, lock-screen / Control Center controls, and a legible
-> loading/stalled/failed-with-retry state machine (no silent hangs). Not yet: offline
-> downloads, real cover art, global (cross-catalog) track search, resume-from-position.
-> This README describes only what is shipped; the predecessor (`set-scrape`) shipped a
-> README claiming features that didn't exist, and avoiding that is an explicit project
-> rule.
+> **Status: Phase 4 complete (downloads & offline), boundary review passed
+> 2026-05-18.** Builds on Phase 3's library with first-class offline
+> downloads: a background `URLSession` downloads a recording's tracks directly from
+> `archive.org` (the backend never touches audio bytes), files are stored verbatim via
+> `AudioStorage`, and the player transparently prefers a local file when one exists.
+> Concert detail has a per-recording download button and a concert-level "Download"
+> (grabs the preferred recording); the Library tab has a Downloads section with
+> swipe-to-delete and a total storage-usage footer; failed/interrupted downloads expose
+> a Retry, and the in-flight task map is rehydrated on app relaunch so a download
+> interrupted by a drop is recoverable rather than stuck. Library data remains local-only
+> (D3: CloudKit deferred, additive, no migration). Earlier phases still hold: the FastAPI
+> backend canonicalizes messy IA `creator`/venue strings, aggregates taper uploads into
+> persisted canonical concerts (SQLite) with a computed preferred recording, serves
+> paginated list/detail with opaque stream URLs, and re-aggregates on-demand when stale;
+> the iOS client has debounced artist search, concert list/detail, a tag-first library
+> (favorites, cross-concert playlists, dynamic Home/Library), real queue management,
+> sequential playback with a full-screen NowPlaying view, mini-player, lock-screen /
+> Control Center controls, and a legible loading/stalled/failed-with-retry state machine
+> (no silent hangs). Not yet: real cover art, global (cross-catalog) track search,
+> resume-from-position. This README
+> describes only what is shipped; the predecessor (`set-scrape`) shipped a README
+> claiming features that didn't exist, and avoiding that is an explicit project rule.
 
 ## Architecture in one paragraph
 
@@ -157,6 +161,18 @@ Expect: search returns artist names with `canonical_key`; concert list is pagina
 12. **Scoped track search:** in the Search tab switch the scope to "Tracks" and search a
     song title. Results are limited to artists you've already browsed (the v1 scoping —
     no global crawl); tapping a result opens that concert's detail.
+13. **Download a recording:** on concert detail, tap the per-recording download button
+    (or the concert-level "Download", which grabs the preferred recording). Watch the
+    progress indicator; on completion the button shows a green check and the track rows
+    show a downloaded indicator. Audio is fetched phone→`archive.org` directly.
+14. **Offline playback:** with a recording downloaded, enable Airplane Mode (and stop the
+    backend), then play a track from that recording — it should play from the local file
+    with no network, no stuck state.
+15. **Downloads in Library + recovery:** Library ▸ Downloads lists completed downloads
+    with a storage-usage footer; swipe a row to delete (files + record removed). Kill the
+    app mid-download, relaunch — the download resumes or, if interrupted, shows a Retry
+    that re-fetches only the missing tracks; Downloads state reflects the saved library
+    immediately on relaunch.
 
 ### What to watch for
 

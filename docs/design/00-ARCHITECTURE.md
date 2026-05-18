@@ -101,10 +101,10 @@ collides with an IA limitation: **IA's Advanced Search does not index track titl
 by crawling the Metadata API across a meaningful slice of `etree`.
 
 v1 decision: **defer the global index (future work F1); ship scoped track search.**
-Track titles are indexed for any recording the client has opened in detail (a free
-byproduct of normal Metadata calls — store them when seen). The search endpoint's `type`
-parameter already accepts `track`; v1 answers it from the opened-recordings index, and a
-future backend crawler fills the rest without an API-shape change.
+v1 track search queries the persisted aggregation — a JOIN across `tracks`, `recordings`,
+and `concerts` — scoped to artists that have been aggregated. The search endpoint's `type`
+parameter already accepts `track`; a future backend crawler grows the coverage without an
+API-shape change.
 
 ## 5. Backend stack & deployment (resolved)
 

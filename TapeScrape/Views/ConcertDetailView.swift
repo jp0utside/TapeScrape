@@ -15,7 +15,9 @@ struct ConcertDetailView: View {
     let concert: ConcertDetailResponse
 
     @Environment(PlaybackCoordinator.self) private var playback
+    @Environment(DownloadManager.self) private var downloadManager
     @Environment(\.libraryRepository) private var library
+    @Environment(\.downloadRepository) private var downloadRepo
     @State private var isFavorited = false
     @State private var pendingPlaylistAdd: PendingPlaylistAdd?
 
@@ -37,6 +39,7 @@ struct ConcertDetailView: View {
                     }
                 }
                 .padding(.vertical, 4)
+                ConcertDownloadButton(concert: concert)
             }
 
             ForEach(concert.recordings, id: \.identifier) { recording in
@@ -52,7 +55,8 @@ struct ConcertDetailView: View {
                         let idx = recording.tracks.firstIndex(where: { $0.index == track.index }) ?? 0
                         TrackRow(
                             track: track,
-                            isCurrentTrack: playback.currentTrack?.filename == track.filename
+                            isCurrentTrack: playback.currentTrack?.filename == track.filename,
+                            isDownloaded: downloadManager.recordingState(for: recording.identifier) == .downloaded
                         ) {
                             playback.play(recording.tracks, startingAt: idx, concert: context)
                         }
@@ -80,6 +84,11 @@ struct ConcertDetailView: View {
                     HStack {
                         Text(recording.source ?? recording.sourceQuality)
                         Spacer()
+                        RecordingDownloadButton(
+                            recording: recording,
+                            context: context,
+                            state: downloadManager.recordingState(for: recording.identifier)
+                        )
                         Menu {
                             Button("Play Recording Next", systemImage: "text.line.first.and.arrowtriangle.forward") {
                                 playback.playNext(recording.tracks, concert: context)
@@ -218,9 +227,97 @@ fileprivate struct AddToPlaylistSheet: View {
     }
 }
 
+// MARK: - ConcertDownloadButton
+
+private struct ConcertDownloadButton: View {
+    let concert: ConcertDetailResponse
+
+    @Environment(DownloadManager.self) private var downloadManager
+
+    private var preferredRecording: RecordingResponse? {
+        concert.recordings.first { $0.identifier == concert.preferredRecordingId }
+    }
+
+    var body: some View {
+        let state = downloadManager.recordingState(for: concert.preferredRecordingId)
+        Button {
+            if case .failed = state {
+                downloadManager.retryDownload(identifier: concert.preferredRecordingId)
+            } else {
+                guard let recording = preferredRecording else { return }
+                let context = ConcertContext(
+                    concertID: concert.id,
+                    recordingIdentifier: recording.identifier,
+                    artist: concert.artist,
+                    date: concert.date,
+                    venue: concert.venue
+                )
+                downloadManager.download(recording: recording, concert: context)
+            }
+        } label: {
+            switch state {
+            case .notDownloaded:
+                Label("Download", systemImage: "arrow.down.circle")
+            case .downloading(let progress):
+                HStack {
+                    ProgressView(value: progress)
+                        .progressViewStyle(.circular)
+                        .frame(width: 20, height: 20)
+                    Text("Downloading...")
+                }
+            case .downloaded:
+                Label("Downloaded", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+            case .failed:
+                Label("Retry Download", systemImage: "exclamationmark.circle")
+                    .foregroundStyle(.red)
+            }
+        }
+        .disabled(state == .downloaded || state.isDownloading)
+    }
+}
+
+// MARK: - RecordingDownloadButton
+
+private struct RecordingDownloadButton: View {
+    let recording: RecordingResponse
+    let context: ConcertContext
+    let state: DownloadState
+
+    @Environment(DownloadManager.self) private var downloadManager
+
+    var body: some View {
+        switch state {
+        case .notDownloaded:
+            Button {
+                downloadManager.download(recording: recording, concert: context)
+            } label: {
+                Image(systemName: "arrow.down.circle")
+            }
+        case .downloading(let progress):
+            ProgressView(value: progress)
+                .progressViewStyle(.circular)
+                .frame(width: 20, height: 20)
+        case .downloaded:
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .failed:
+            Button {
+                downloadManager.retryDownload(identifier: recording.identifier)
+            } label: {
+                Image(systemName: "exclamationmark.circle")
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+}
+
+// MARK: - TrackRow
+
 private struct TrackRow: View {
     let track: TrackResponse
     let isCurrentTrack: Bool
+    var isDownloaded: Bool = false
     let onTap: () -> Void
 
     var body: some View {
@@ -241,6 +338,12 @@ private struct TrackRow: View {
                 }
 
                 Spacer()
+
+                if isDownloaded {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }

@@ -45,4 +45,43 @@ struct AudioStorageTests {
 
         #expect(try storage.usage() == 256)
     }
+
+    @Test func fileExistsReturnsTrueAfterStore() throws {
+        let storage = tempStorage()
+        defer { try? FileManager.default.removeItem(at: storage.root) }
+
+        #expect(!storage.fileExists(identifier: "gd1977-05-08.sbd", file: "track01.mp3"))
+        try storage.store(Data("x".utf8), identifier: "gd1977-05-08.sbd", file: "track01.mp3")
+        #expect(storage.fileExists(identifier: "gd1977-05-08.sbd", file: "track01.mp3"))
+    }
+
+    @Test func fileExistsReturnsFalseAfterDelete() throws {
+        let storage = tempStorage()
+        defer { try? FileManager.default.removeItem(at: storage.root) }
+
+        try storage.store(Data("x".utf8), identifier: "gd1977-05-08.sbd", file: "track01.mp3")
+        try storage.delete(identifier: "gd1977-05-08.sbd", file: "track01.mp3")
+        #expect(!storage.fileExists(identifier: "gd1977-05-08.sbd", file: "track01.mp3"))
+    }
+
+    @Test func deleteRecordingRemovesDirectory() throws {
+        let storage = tempStorage()
+        defer { try? FileManager.default.removeItem(at: storage.root) }
+
+        try storage.store(Data("a".utf8), identifier: "gd1977-05-08.sbd", file: "track01.mp3")
+        try storage.store(Data("b".utf8), identifier: "gd1977-05-08.sbd", file: "track02.mp3")
+        try storage.deleteRecording(identifier: "gd1977-05-08.sbd")
+
+        #expect(!storage.fileExists(identifier: "gd1977-05-08.sbd", file: "track01.mp3"))
+        #expect(!storage.fileExists(identifier: "gd1977-05-08.sbd", file: "track02.mp3"))
+        let dir = storage.root.appendingPathComponent("gd1977-05-08.sbd")
+        #expect(!FileManager.default.fileExists(atPath: dir.path))
+    }
+
+    @Test func deleteRecordingNoopsWhenMissing() throws {
+        let storage = tempStorage()
+        #expect(throws: Never.self) {
+            try storage.deleteRecording(identifier: "nonexistent")
+        }
+    }
 }

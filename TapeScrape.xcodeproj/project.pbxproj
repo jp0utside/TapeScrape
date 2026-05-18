@@ -12,14 +12,18 @@
 		380BDBD234F0C88943A6FFC0 /* CatalogClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0332D5A01B44A774020EB291 /* CatalogClientTests.swift */; };
 		39D0075B11D30A307FC8A63B /* ConcertDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7066BB714805E32790A31521 /* ConcertDetailView.swift */; };
 		3CB441144FB2AEB2EE59C837 /* ConcertListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69F77FF6D819366E2C44AC98 /* ConcertListView.swift */; };
+		3E336D60F98DB854BC6A9812 /* DownloadRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C5DD8E797E1749998CEA868 /* DownloadRepository.swift */; };
 		3F503D2A66E9E549CAFBDBE2 /* PlayerBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A3CCCFED38441288FEF599 /* PlayerBackend.swift */; };
 		429D3FC5F4AB047B4E4D4D36 /* LibraryTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB896E7AA57B9EF1A792EFDE /* LibraryTab.swift */; };
 		4FC2CF0C68436A24C9B2ADB1 /* SQLiteLibraryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316C0F9E4C9B5ADFADDDB049 /* SQLiteLibraryRepository.swift */; };
+		59AE50F5F27F3D940CB5CEAC /* DownloadManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE9B7865B31082445EF4BF7 /* DownloadManagerTests.swift */; };
 		628185F93102BFEE0E3D849A /* PlaybackCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD58451DA1B037B60CF828E /* PlaybackCoordinatorTests.swift */; };
 		62A1AE2EED89590DFD4AB2A3 /* SQLiteLibraryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30EA6380A5CB880B09F948E1 /* SQLiteLibraryRepositoryTests.swift */; };
+		658A24CCEC109F8FBCAF4CAB /* SQLiteDownloadRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F32282E0D7780BAE410C9047 /* SQLiteDownloadRepository.swift */; };
 		75650B68D659E052771C144A /* HomeTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A63285C8F3BBFB4ADDA10717 /* HomeTab.swift */; };
 		85293189AC9FE4DC5434B5E4 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64209B39C55DC7642614A513 /* DeepLinkRouter.swift */; };
 		87D521ABFCE09F26023A0EFF /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 128C66141A17F91EA926CBB0 /* NowPlayingView.swift */; };
+		8F788B2150BF428A035CB104 /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 902B5A8382AF66D183B9914A /* DownloadManager.swift */; };
 		9DE3D478325449BC06A1129E /* AudioStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2363EE6B82EE8452C78C473 /* AudioStorageTests.swift */; };
 		A02377A8C9624B8CB17BA09E /* AudioStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174E249716B863060D17C0FF /* AudioStorage.swift */; };
 		A2FA5379A576E32D3DEB90F1 /* PlaybackHistoryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B841FC2FF955539BF89979 /* PlaybackHistoryRepository.swift */; };
@@ -33,9 +37,11 @@
 		D2472CD8FDB1D680D3C4F33F /* Concert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502ED88FE7805250B8C6186E /* Concert.swift */; };
 		DBA13DF78DC06A016626F1F4 /* TapeScrapeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91ED4F01E20CF943FB5D91F /* TapeScrapeTests.swift */; };
 		DF483AB3D07062EBF790E78E /* LibraryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B57EB0AA267C66E55BF2EDF /* LibraryRepository.swift */; };
+		E40D62520FC774923241034C /* LibraryDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5533CDBA088E4B41529D37B /* LibraryDatabase.swift */; };
 		E7137BCB7B610482143C91F2 /* CatalogClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99D3E20ED25F81109FAAFF9 /* CatalogClient.swift */; };
 		ED9C4E43C56BC42C18A5A34B /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542BFEF8C1BD8868D94C2BA4 /* PlaylistDetailView.swift */; };
 		F12286277EC3CBFC37F67556 /* LibraryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB2200FD429737C732BB33A /* LibraryRepositoryTests.swift */; };
+		F804EEEA9C10865A5435FFBB /* DownloadRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590C7AF36DCF5671BA96791F /* DownloadRepositoryTests.swift */; };
 		F9C49A1A29A01C7F0DFCE94B /* DeepLinkRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20556997DFAE87974D38B28A /* DeepLinkRouterTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -61,6 +67,7 @@
 		0889F297F82330A916AA3E47 /* TapeScrapeUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TapeScrapeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		128C66141A17F91EA926CBB0 /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
 		174E249716B863060D17C0FF /* AudioStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioStorage.swift; sourceTree = "<group>"; };
+		1C5DD8E797E1749998CEA868 /* DownloadRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRepository.swift; sourceTree = "<group>"; };
 		20556997DFAE87974D38B28A /* DeepLinkRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouterTests.swift; sourceTree = "<group>"; };
 		30EA6380A5CB880B09F948E1 /* SQLiteLibraryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteLibraryRepositoryTests.swift; sourceTree = "<group>"; };
 		316C0F9E4C9B5ADFADDDB049 /* SQLiteLibraryRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteLibraryRepository.swift; sourceTree = "<group>"; };
@@ -71,11 +78,13 @@
 		4F21C9AFBFBFFC962A9BD300 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		502ED88FE7805250B8C6186E /* Concert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Concert.swift; sourceTree = "<group>"; };
 		542BFEF8C1BD8868D94C2BA4 /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
+		590C7AF36DCF5671BA96791F /* DownloadRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRepositoryTests.swift; sourceTree = "<group>"; };
 		5BB2200FD429737C732BB33A /* LibraryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRepositoryTests.swift; sourceTree = "<group>"; };
 		64209B39C55DC7642614A513 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		69F77FF6D819366E2C44AC98 /* ConcertListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcertListView.swift; sourceTree = "<group>"; };
 		7066BB714805E32790A31521 /* ConcertDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcertDetailView.swift; sourceTree = "<group>"; };
 		80B841FC2FF955539BF89979 /* PlaybackHistoryRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryRepository.swift; sourceTree = "<group>"; };
+		902B5A8382AF66D183B9914A /* DownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift; sourceTree = "<group>"; };
 		99B156502B908A8FEBB2A8A5 /* TapeScrapeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapeScrapeApp.swift; sourceTree = "<group>"; };
 		9AD58451DA1B037B60CF828E /* PlaybackCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackCoordinatorTests.swift; sourceTree = "<group>"; };
 		9C0EC034304FA50AE46AC78F /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
@@ -90,13 +99,17 @@
 		C99D3E20ED25F81109FAAFF9 /* CatalogClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogClient.swift; sourceTree = "<group>"; };
 		D4C424A0BC857F323CE34EC7 /* PlaybackHistoryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryRepositoryTests.swift; sourceTree = "<group>"; };
 		D7331151A604DF4D4B3F84CE /* PlaybackCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackCoordinator.swift; sourceTree = "<group>"; };
+		E5533CDBA088E4B41529D37B /* LibraryDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryDatabase.swift; sourceTree = "<group>"; };
 		F192C8A6D74B860D25DC4389 /* SearchTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchTab.swift; sourceTree = "<group>"; };
+		F32282E0D7780BAE410C9047 /* SQLiteDownloadRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteDownloadRepository.swift; sourceTree = "<group>"; };
+		FBE9B7865B31082445EF4BF7 /* DownloadManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManagerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		20EBD14476B78420758D1B2E /* Repositories */ = {
 			isa = PBXGroup;
 			children = (
+				590C7AF36DCF5671BA96791F /* DownloadRepositoryTests.swift */,
 				5BB2200FD429737C732BB33A /* LibraryRepositoryTests.swift */,
 				D4C424A0BC857F323CE34EC7 /* PlaybackHistoryRepositoryTests.swift */,
 				30EA6380A5CB880B09F948E1 /* SQLiteLibraryRepositoryTests.swift */,
@@ -126,8 +139,11 @@
 		3F43F51C27760D2CDC9075E8 /* Repositories */ = {
 			isa = PBXGroup;
 			children = (
+				1C5DD8E797E1749998CEA868 /* DownloadRepository.swift */,
+				E5533CDBA088E4B41529D37B /* LibraryDatabase.swift */,
 				4B57EB0AA267C66E55BF2EDF /* LibraryRepository.swift */,
 				80B841FC2FF955539BF89979 /* PlaybackHistoryRepository.swift */,
+				F32282E0D7780BAE410C9047 /* SQLiteDownloadRepository.swift */,
 				316C0F9E4C9B5ADFADDDB049 /* SQLiteLibraryRepository.swift */,
 				9D4A9C3911A17B576F1B91FD /* SQLitePlaybackHistoryRepository.swift */,
 			);
@@ -174,6 +190,22 @@
 			path = Networking;
 			sourceTree = "<group>";
 		};
+		9836F4EDB20C3F29E933D4ED /* Downloads */ = {
+			isa = PBXGroup;
+			children = (
+				902B5A8382AF66D183B9914A /* DownloadManager.swift */,
+			);
+			path = Downloads;
+			sourceTree = "<group>";
+		};
+		98BC15CECD5AE18479E3840F /* Downloads */ = {
+			isa = PBXGroup;
+			children = (
+				FBE9B7865B31082445EF4BF7 /* DownloadManagerTests.swift */,
+			);
+			path = Downloads;
+			sourceTree = "<group>";
+		};
 		9B51B3F92E5CFBCC6216E3DA /* Storage */ = {
 			isa = PBXGroup;
 			children = (
@@ -206,6 +238,7 @@
 				3E9660DEF0838CCDBD81616F /* Assets.xcassets */,
 				4F21C9AFBFBFFC962A9BD300 /* Info.plist */,
 				99B156502B908A8FEBB2A8A5 /* TapeScrapeApp.swift */,
+				9836F4EDB20C3F29E933D4ED /* Downloads */,
 				34F2376BF9D70E2B962D390D /* Models */,
 				ABBF18DC25408F180DC08AC1 /* Navigation */,
 				93C2208B975D3DEFDBFB918A /* Networking */,
@@ -231,6 +264,7 @@
 				0332D5A01B44A774020EB291 /* CatalogClientTests.swift */,
 				9AD58451DA1B037B60CF828E /* PlaybackCoordinatorTests.swift */,
 				C91ED4F01E20CF943FB5D91F /* TapeScrapeTests.swift */,
+				98BC15CECD5AE18479E3840F /* Downloads */,
 				E63B512B11B8D7D88FFC4544 /* Navigation */,
 				20EBD14476B78420758D1B2E /* Repositories */,
 				6EBBDBFEED63198971262578 /* Storage */,
@@ -364,7 +398,10 @@
 				39D0075B11D30A307FC8A63B /* ConcertDetailView.swift in Sources */,
 				3CB441144FB2AEB2EE59C837 /* ConcertListView.swift in Sources */,
 				85293189AC9FE4DC5434B5E4 /* DeepLinkRouter.swift in Sources */,
+				8F788B2150BF428A035CB104 /* DownloadManager.swift in Sources */,
+				3E336D60F98DB854BC6A9812 /* DownloadRepository.swift in Sources */,
 				75650B68D659E052771C144A /* HomeTab.swift in Sources */,
+				E40D62520FC774923241034C /* LibraryDatabase.swift in Sources */,
 				DF483AB3D07062EBF790E78E /* LibraryRepository.swift in Sources */,
 				429D3FC5F4AB047B4E4D4D36 /* LibraryTab.swift in Sources */,
 				C1B51DD6C3183E6CD5AFFC43 /* MiniPlayerView.swift in Sources */,
@@ -373,6 +410,7 @@
 				A2FA5379A576E32D3DEB90F1 /* PlaybackHistoryRepository.swift in Sources */,
 				3F503D2A66E9E549CAFBDBE2 /* PlayerBackend.swift in Sources */,
 				ED9C4E43C56BC42C18A5A34B /* PlaylistDetailView.swift in Sources */,
+				658A24CCEC109F8FBCAF4CAB /* SQLiteDownloadRepository.swift in Sources */,
 				4FC2CF0C68436A24C9B2ADB1 /* SQLiteLibraryRepository.swift in Sources */,
 				A78CA5EF3BEEEDD5F4C8B545 /* SQLitePlaybackHistoryRepository.swift in Sources */,
 				BAC2511B71B6FAA4E91519BA /* SearchTab.swift in Sources */,
@@ -388,6 +426,8 @@
 				9DE3D478325449BC06A1129E /* AudioStorageTests.swift in Sources */,
 				380BDBD234F0C88943A6FFC0 /* CatalogClientTests.swift in Sources */,
 				F9C49A1A29A01C7F0DFCE94B /* DeepLinkRouterTests.swift in Sources */,
+				59AE50F5F27F3D940CB5CEAC /* DownloadManagerTests.swift in Sources */,
+				F804EEEA9C10865A5435FFBB /* DownloadRepositoryTests.swift in Sources */,
 				F12286277EC3CBFC37F67556 /* LibraryRepositoryTests.swift in Sources */,
 				628185F93102BFEE0E3D849A /* PlaybackCoordinatorTests.swift in Sources */,
 				CAA5D311E657DEA836B84391 /* PlaybackHistoryRepositoryTests.swift in Sources */,

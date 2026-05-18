@@ -136,7 +136,7 @@ def test_items_without_creator_are_skipped():
 def test_concert_type_is_honest_501():
     resp = client.get("/search", params={"type": "concert", "q": "x"})
     assert resp.status_code == 501
-    assert "02-002" in resp.json()["detail"]
+    assert "concert search is not implemented" in resp.json()["detail"]
 
 
 def test_unknown_type_is_rejected():

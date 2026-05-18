@@ -231,15 +231,27 @@ verbatim across both implementations:
   the test/preview default (§19); it must mirror the SQLite semantics (e.g. contiguous
   `sort_order` renumbering after remove/move).
 
-Known gap (single-user-acceptable, tracked as Phase-3 follow-ups, **not** convention):
-each repository opens its **own** connection to the one file, no `busy_timeout`/WAL,
-and `sqlite3_step` return codes on writes are unchecked — a concurrent-write
-`SQLITE_BUSY` is silently dropped. A shared DB actor is the fix if a 3rd impl or real
-contention appears; over-abstracting two impls is the larger risk now.
+A `LibraryDatabase` actor (`TapeScrape/Repositories/LibraryDatabase.swift`) owns the
+single shared connection — opened once with `PRAGMA journal_mode=WAL` and
+`PRAGMA busy_timeout=3000`. All repository actors receive the `OpaquePointer` via
+`init(database:)` and never call `sqlite3_open`/`sqlite3_close` themselves. All
+`sqlite3_step` calls on write statements are checked; a non-`SQLITE_DONE` result logs a
+warning via `print("[LibrarySQLite] …")` (graceful degradation, not a crash).
 
 _Appeared in: 03-001-favorites (`SQLiteLibraryRepository`), 03-002-playback-history
 (`SQLitePlaybackHistoryRepository`), 03-004-playlists (`playlist_items` extends the
-same `SQLiteLibraryRepository`)._
+same `SQLiteLibraryRepository`), 03.5-001-pre-phase4-cleanup (`LibraryDatabase` actor,
+checked writes), 04-001-download-one-recording (`SQLiteDownloadRepository` — 3rd impl;
+`download_recordings`/`download_tracks` added to the shared `LibraryDatabase` schema)._
+
+> **Checked-write drift (F3-3 trigger now fired).** With `SQLiteDownloadRepository` as
+> the **3rd** impl, the F3-3 "DRY only on a 3rd impl" condition is met. All three honor
+> "no silent write — log via `print("[LibrarySQLite] …")`", but the spelling has drifted
+> three ways: `SQLiteLibraryRepository` has a `checkedStep(_:context:)` helper logging
+> `rc=`; `SQLitePlaybackHistoryRepository` inlines one check logging `rc=`;
+> `SQLiteDownloadRepository` inlines ~12 checks **omitting `rc=`** (weaker debugging).
+> Not a bug; a real cleanup trigger → recorded as a Phase-4 follow-up. Convention going
+> forward: a single shared `checkedStep(_:context:)` logging the `rc`.
 
 ## 19. Repository dependency injection: Environment key + one shared instance
 
@@ -256,7 +268,42 @@ SQLite and no wiring.
 
 _Appeared in: 03-001-favorites (`libraryRepository` key + `EnvironmentValues`
 extension), 03-002-playback-history (`playbackHistoryRepository` key + the single
-shared-instance wiring in `TapeScrapeApp`), consumed by 03-004/03-005._
+shared-instance wiring in `TapeScrapeApp`), consumed by 03-004/03-005,
+04-001-download-one-recording (`downloadRepository` key, same shape; `DownloadManager`
+itself is injected as an `@Observable` via `.environment(object)`, not the key — it is
+not a repository), consumed by 04-002/04-003._
+
+## 20. Background URLSession download lifecycle
+
+The download subsystem is a single `@Observable @MainActor final class DownloadManager:
+NSObject` owning one `URLSessionConfiguration.background(withIdentifier:
+"com.tapescrape.downloads")` session. Audio bytes go phone→`archive.org` directly from
+the opaque `stream_url`; the backend is never involved; files are written verbatim
+through `AudioStorage` (no transcode). The shape, repeated across packets:
+
+- `URLSessionDownloadDelegate` callbacks are `nonisolated`; each reads only `Sendable`
+  primitives off the delegate queue, then hops to the actor via
+  `Task { @MainActor [weak self] in … }` — the same nonisolated-callback→MainActor
+  pattern as §14 (`AVPlayerBackend` KVO) and `PlaybackCoordinator` interruption handling.
+  `taskMap: [Int: (identifier, filename)]` stays MainActor-only.
+- All durable download state lives in `DownloadRepository` (§19); `recordingProgress`
+  is the in-memory mirror for the UI. The repository is the authority — the manager's
+  mirror must be reconciled *from* it, not allowed to diverge.
+- Relaunch recovery: `restoreState()` (fired from `init` via `Task`) seeds the mirror
+  from `allDownloads()` then `rehydrateTaskMap()` re-maps OS-resumed tasks via
+  `session.getAllTasks` + `repository.findTrackByStreamURL`, cancels orphans, and marks
+  any `downloading` record with no live task `failed` so a Retry is offered (never a
+  silent stuck download — the Phase-4 "Done when" recovery guarantee).
+- The system background-completion handler is bridged through a one-method
+  `UIApplicationDelegateAdaptor` (`AppDelegate.handleEventsForBackgroundURLSession`),
+  stored on the manager and invoked from `urlSessionDidFinishEvents`.
+
+_Appeared in: 04-001-download-one-recording (`DownloadManager` + background session +
+delegate + prefer-local in `PlaybackCoordinator`), 04-003-download-resilience (retry of
+non-complete tracks, `rehydrateTaskMap` via `getAllTasks`, interrupted→failed sweep),
+04.5-001-download-restore-reconcile (F4-1 resolved: reorder rehydrate → single final
+`allDownloads()` → seed mirror for all states; `whenRestored()` hook for deterministic
+test awaiting)._
 
 ---
 

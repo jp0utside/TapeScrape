@@ -1,26 +1,53 @@
 import AVFoundation
 import SwiftUI
 
+class AppDelegate: NSObject, UIApplicationDelegate {
+    var downloadManager: DownloadManager?
+
+    func application(_ application: UIApplication,
+                     handleEventsForBackgroundURLSession identifier: String,
+                     completionHandler: @escaping () -> Void) {
+        if identifier == "com.tapescrape.downloads" {
+            downloadManager?.backgroundCompletionHandler = completionHandler
+        }
+    }
+}
+
 @main
 struct TapeScrapeApp: App {
-    private static let dbURL = FileManager.default
-        .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("library.sqlite")
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+    private static let dbURL: URL = {
+        let dir = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("library.sqlite")
+    }()
 
     private let library: any LibraryRepository
     private let playbackHistory: any PlaybackHistoryRepository
+    private let downloads: any DownloadRepository
     @State private var playback: PlaybackCoordinator
+    @State private var downloadManager: DownloadManager
 
     init() {
-        let history = SQLitePlaybackHistoryRepository(dbURL: TapeScrapeApp.dbURL)
+        let database = LibraryDatabase(url: TapeScrapeApp.dbURL)
+        let history = SQLitePlaybackHistoryRepository(database: database)
+        let storage = DocumentsAudioStorage()
+        let dlRepo = SQLiteDownloadRepository(database: database)
         playbackHistory = history
-        library = SQLiteLibraryRepository(dbURL: TapeScrapeApp.dbURL)
-        _playback = State(initialValue: PlaybackCoordinator(history: history))
+        library = SQLiteLibraryRepository(database: database)
+        downloads = dlRepo
+        _playback = State(initialValue: PlaybackCoordinator(
+            history: history, storage: storage
+        ))
+        _downloadManager = State(initialValue: DownloadManager(
+            storage: storage, repository: dlRepo
+        ))
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            // Non-fatal — audio may still play; logged for debugging.
             print("[TapeScrape] AVAudioSession setup failed: \(error)")
         }
     }
@@ -29,8 +56,11 @@ struct TapeScrapeApp: App {
         WindowGroup {
             ContentView()
                 .environment(playback)
+                .environment(downloadManager)
                 .environment(\.libraryRepository, library)
                 .environment(\.playbackHistoryRepository, playbackHistory)
+                .environment(\.downloadRepository, downloads)
+                .onAppear { appDelegate.downloadManager = downloadManager }
         }
     }
 }

@@ -15,7 +15,23 @@ actor MockPlaybackHistoryRepository: PlaybackHistoryRepository {
     func distinctArtists(limit: Int) async -> [EngagedArtist] { [] }
 }
 
-// Mock that captures calls and exposes callback closures for test-driven state injection.
+struct MockAudioStorage: AudioStorage {
+    var existingFiles: Set<String> = []
+
+    func url(for identifier: String, file: String) -> URL? {
+        URL(fileURLWithPath: "/mock/\(identifier)/\(file)")
+    }
+
+    func fileExists(identifier: String, file: String) -> Bool {
+        existingFiles.contains("\(identifier)/\(file)")
+    }
+
+    func store(_ data: Data, identifier: String, file: String) throws {}
+    func delete(identifier: String, file: String) throws {}
+    func deleteRecording(identifier: String) throws {}
+    func usage() throws -> UInt64 { 0 }
+}
+
 final class MockPlayer: PlayerBackend {
     var onTrackEnd: (() -> Void)?
     var onPlaybackReady: (() -> Void)?
@@ -39,11 +55,14 @@ final class MockPlayer: PlayerBackend {
 
 @MainActor
 struct PlaybackCoordinatorTests {
-    private func makeCoordinator(history: (any PlaybackHistoryRepository)? = nil)
-        -> (PlaybackCoordinator, MockPlayer) {
+    private func makeCoordinator(
+        history: (any PlaybackHistoryRepository)? = nil,
+        storage: AudioStorage? = nil
+    ) -> (PlaybackCoordinator, MockPlayer) {
         let mock = MockPlayer()
         let h = history ?? InMemoryPlaybackHistoryRepository()
-        return (PlaybackCoordinator(player: mock, history: h), mock)
+        let s = storage ?? MockAudioStorage()
+        return (PlaybackCoordinator(player: mock, history: h, storage: s), mock)
     }
 
     private func makeTrack(
@@ -522,5 +541,34 @@ struct PlaybackCoordinatorTests {
         let track = TrackResponse(index: 0, title: nil, filename: "x.flac",
                                   duration: nil, streamUrl: "https://x")
         #expect(track.durationSeconds == nil)
+    }
+
+    // MARK: - prefer local file
+
+    @Test func prefersLocalFileWhenDownloaded() {
+        var mockStorage = MockAudioStorage()
+        mockStorage.existingFiles = ["gd77.sbd/track0.flac"]
+        let (coordinator, mock) = makeCoordinator(storage: mockStorage)
+        let ctx = ConcertContext(concertID: "gd1977-05-08", recordingIdentifier: "gd77.sbd",
+                                 artist: "Grateful Dead", date: "1977-05-08", venue: "Barton Hall")
+        coordinator.play([makeTrack()], startingAt: 0, concert: ctx)
+        #expect(mock.lastLoadedURL?.isFileURL == true)
+        #expect(mock.lastLoadedURL?.path.contains("gd77.sbd/track0.flac") == true)
+    }
+
+    @Test func usesRemoteURLWhenNotDownloaded() {
+        let (coordinator, mock) = makeCoordinator()
+        let ctx = ConcertContext(concertID: "gd1977-05-08", recordingIdentifier: "gd77.sbd",
+                                 artist: "Grateful Dead", date: "1977-05-08", venue: "Barton Hall")
+        coordinator.play([makeTrack()], startingAt: 0, concert: ctx)
+        #expect(mock.lastLoadedURL?.scheme == "https")
+    }
+
+    @Test func usesRemoteURLWhenNoConcertContext() {
+        var mockStorage = MockAudioStorage()
+        mockStorage.existingFiles = ["gd77.sbd/track0.flac"]
+        let (coordinator, mock) = makeCoordinator(storage: mockStorage)
+        coordinator.play([makeTrack()], startingAt: 0)
+        #expect(mock.lastLoadedURL?.scheme == "https")
     }
 }

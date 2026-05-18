@@ -64,11 +64,11 @@ Per `00-ARCHITECTURE.md` § 6. Distinct from the derived catalog:
 - `search_cache` — keyed by a hash of the normalized query+page; value = raw IA search
   response; TTL ~30 min.
 - `metadata_cache` — keyed by identifier; value = raw IA Metadata response; TTL ~24 h.
-- `track_index` — `(identifier, track_index, title, duration)` rows written as a free
-  byproduct whenever a Metadata response is parsed. Powers scoped v1 track search and is
-  the table a future F1 crawler grows. **Add this in the phase track search lands, not
-  before** — but the search endpoint's `type` param accepts `track` from day one so the
-  API shape never has to change (`00-ARCHITECTURE.md` § 4).
+- `tracks` (aggregated, JOINed with `recordings` and `concerts`) — v1 track search
+  queries this persisted aggregation table directly, scoped to artists that have been
+  aggregated. No separate per-opened-recording index is built. The search endpoint's
+  `type` param accepts `track` from day one; a future F1 global-crawl index fills the
+  rest without an API-shape change (`00-ARCHITECTURE.md` § 4).
 
 Aggregated `Concert`/`Recording`/`Track` are **persisted**, not memoized in a process
 dict — the explicit fix for `set-scrape`'s dead-schema bug (`01-INTERNET-ARCHIVE.md`
@@ -105,9 +105,10 @@ default; the override travels with the library, not the catalog.
 ## 5. Client personal library (on-device, tag-first)
 
 Owned entirely by the device. Local-only for v1; CloudKit sync is a Phase-3 decision
-(`04-OPEN-QUESTIONS.md` D3) with one cheap hook reserved: put library data in a custom
-zone-shaped container from day one so a future CloudKit `LibraryZone` / shared zones (F8)
-don't require a migration.
+(`04-OPEN-QUESTIONS.md` D3). The repository protocol (`LibraryRepository`,
+`PlaybackHistoryRepository`, …) is the CloudKit swap seam — a future implementation
+backed by CloudKit replaces only the concrete repository, with no schema migration (per
+D3: local-only v1, CloudKit is additive).
 
 ### Unified storage with a pinned flag (resolved: D5)
 
@@ -121,7 +122,9 @@ code path.
 
 Favorites, playlists, and smart collections are **not** separate record types. They are:
 
-- **Tag** — `(name, kind)` where `kind ∈ {system, user}`. `favorite` is a system tag.
+- **Tag** — `(name, kind)` where `kind` is a purpose enum `{favorite, playlist, smart, user}`.
+  `favorite` is `kind=favorite` (not a generic "system" tag). `playlist` and `smart` are
+  first-class kinds, not user-created tags. `user` covers ad-hoc user-defined tags.
 - **Tagging** — `(tag_id, target)` where `target` is a `(recordingID)` or
   `(recordingID, trackIndex)` or `concertID`.
 - **Playlist** — an ordered list of `(recordingID, trackIndex)` plus a name tag.

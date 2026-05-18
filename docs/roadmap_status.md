@@ -13,9 +13,22 @@ stand. It is *not* an architecture doc — that's `docs/design/`; not sequencing
 
 ## Current state
 
-- **Phase:** 3 — COMPLETE + reviewed (2026-05-18). Phases 0–2 COMPLETE + reviewed.
-- **Repo:** Phase 3 complete. On-device tag-first library (SQLite `library.sqlite`): favorites, cross-concert playlists, real cross-recording queue (play-next/add-to-end/reorder/remove), dynamic Home (Recently Played / On This Day / Artists You Listen To) + dynamic Library, scoped per-track search over the aggregated catalog. Phase-2 backend debt cleared by `02.5-001` (F2-2..F2-6). Backend otherwise unchanged except the new `type=track` search.
-- **Next action:** Plan Phase 4 (downloads/offline). First Plan step: confirm the **D2b** backend-host posture for a downloads-capable build (deferred since Phase 2; the off-home-Wi-Fi trigger has not formally fired, but offline downloads make a real URL likelier — user call), then write the first Phase 4 packet (smallest: background `URLSession` download of one preferred recording through `AudioStorage`). No 🔴 blocks Phase 4 — the only 🔴 (F3-1, stale README) was resolved in this review.
+- **Phase:** 4 — **COMPLETE + reviewed (2026-05-18).** Boundary review's sole 🔴 (F4-1)
+  **resolved by `04.5-001` and independently verified** (Swift suite **155 passed / 0
+  failed `** TEST SUCCEEDED **`**; backend 137/2; scope clean). Phases 0–3 COMPLETE +
+  reviewed.
+- **Repo:** Phase 4 complete (`03.5-001` + `04-001`..`04-003` + `04.5-001`).
+  Background-`URLSession` downloads phone→`archive.org` (backend never touches audio
+  bytes), verbatim via `AudioStorage`, prefer-local playback, per-recording +
+  concert-level (preferred-recording) download buttons, Library Downloads section
+  (swipe-delete + storage-usage footer), retry + relaunch task-map rehydration with the
+  in-memory mirror now reconciled from the authoritative repository on restore. Phase-3
+  debt cleared by `03.5-001` (F3-2/5/6/7/8).
+- **Next action:** **Plan Phase 5 (cover art).** Gated only on **D6** — the user's
+  visual reference points, due by Phase 5 (`docs/design/04-OPEN-QUESTIONS.md`). Carried
+  non-blocking debt into Phase 5: F4-2 🟡 (`download_tracks.local_path` absolute path /
+  dead `tracksForRecording`) and F4-3/4/5 🟢, plus the long-carried 🟢 set — none gate
+  Phase 5 (only F4-1 ever did, now closed).
 - **Phase 2 decisions (2026-05-17):** D2b backend host → *consciously deferred*, stay local through Phase 2 (revisit trigger: first off-home-Wi-Fi need). Re-aggregation trigger → on-demand-when-stale. See `docs/design/04-OPEN-QUESTIONS.md`.
 - **Phase 3 decisions (2026-05-18):** D3 → **local-only v1** (CloudKit later, additive, no migration; revisit trigger = 2nd device / clean-reinstall resilience). Library subset → **favorites + minimal playlists** (defer smart collections / tag UI / notes). See `docs/design/04-OPEN-QUESTIONS.md`.
 
@@ -74,7 +87,7 @@ track search). Only `03-001` was firm at the boundary; the rest were written one
 | 1 — One concert E2E | COMPLETE | started 2026-05-16; all 3 packets done 2026-05-16; boundary review passed 2026-05-16 (1 blocking follow-up: README update) |
 | 2 — Browse/search/player | COMPLETE | all 6 packets done 2026-05-17 (`01.5-001`,`02-001`..`02-005`); boundary review passed 2026-05-17 (1 blocking follow-up resolved in-review: README; 4 🟡 debt follow-ups recorded) |
 | 3 — Library/queue | COMPLETE | opened with `02.5-001` (Phase-2 debt F2-2..F2-6); 6 client packets `03-001`..`03-006` done 2026-05-18; boundary review passed 2026-05-18 (1 🔴 README resolved in-review; F2-2..F2-6 confirmed closed; 3 design-doc proposals + debt follow-ups recorded) |
-| 4 — Downloads/offline | NOT STARTED | next; Plan should confirm D2b host posture for a downloads build |
+| 4 — Downloads/offline | COMPLETE | `03.5-001`+`04-001`..`04-003`+`04.5-001` done 2026-05-18; boundary review 2026-05-18 — sole 🔴 (F4-1) **resolved by `04.5-001` & verified** (Swift 155/0 SUCCEEDED, backend 137/2); README 🔴 resolved in-review; F4-2 🟡 + F4-3..F4-5 🟢 carried (non-blocking); CONVENTIONS §20 added, §18/§19 extended |
 | 5 — Cover art | NOT STARTED | |
 | 6 — Polish/TestFlight | NOT STARTED | |
 
@@ -111,6 +124,179 @@ decision history are written by Review/Plan, never by Build. Format:
 | `03-004-playlists` | COMPLETE | PlaylistItem + Hashable Tag; playlist CRUD in protocol/InMemory/SQLite (playlist_items table); AddToPlaylistSheet in ConcertDetailView; PlaylistDetailView (play/reorder/delete/rename); Playlists section in LibraryTab; 106 Swift tests pass | summary: `workflow/packets/03-004-playlists.summary.md` | PlaylistItem.id not persisted (schema spec); rewritePlaylistItems for move/remove (PK safety) |
 | `03-005-dynamic-home` | COMPLETE | Dynamic Home shelves: On This Day (favorite anniversaries), Artists You Listen To (from history); GD browse link becomes conditional fallback; 110 Swift tests pass | summary: `workflow/packets/03-005-dynamic-home.summary.md` | — |
 | `03-006-track-search` | COMPLETE | `GET /search?type=track` over aggregated tracks table (JOIN recordings+concerts); `TrackMatch`/`TrackSearchResponse` models; SearchTab scope picker (Artists/Tracks); tap navigates to concert detail; 13 backend tests pass, BUILD SUCCEEDED | summary: `workflow/packets/03-006-track-search.summary.md` | — |
+| `03.5-001-pre-phase4-cleanup` | COMPLETE | LibraryDatabase actor (shared connection, WAL, busy_timeout=3000, checked writes); stale 501 string fixed; design-doc reconciliation (F3-6/7/8); CONVENTIONS §18 updated | summary: `workflow/packets/03.5-001-pre-phase4-cleanup.summary.md` | No deviations; `test_concert_type_is_honest_501` updated to match corrected string |
+| `04-001-download-one-recording` | COMPLETE | DownloadRepository (protocol + SQLite + InMemory); DownloadManager (background URLSession); AudioStorage.fileExists; PlaybackCoordinator prefer-local; download button on ConcertDetailView; AppDelegate for background session; 24+ tests pass | summary: `workflow/packets/04-001-download-one-recording.summary.md` | `didFinishDownloadingTo` reads into Data (acceptable v1; note for future file-move optimization); pre-existing SQLiteLibraryRepository test failures (Application Support dir) fixed with createDirectory in TapeScrapeApp |
+| `04-002-concert-download-and-library` | COMPLETE | Concert-level download button (preferred recording); Downloads section in Library tab with swipe-delete; DownloadManager.deleteDownload; AudioStorage.deleteRecording; new protocol methods completedDownloads/tracksForRecording; 8 AudioStorage + 11+ DownloadRepository tests pass | summary: `workflow/packets/04-002-concert-download-and-library.summary.md` | Fixed pre-existing LibraryDatabase lifetime bug in SQLiteDownloadRepository tests (was deallocated before use, silently returning empty results); MockAudioStorage updated for new deleteRecording method |
+| `04-002.5-sqlite-test-cleanup` | COMPLETE | Fixed SQLiteLibraryRepositoryTests LibraryDatabase lifetime bug; default test run is now fully green | summary: `workflow/packets/04-002.5-sqlite-test-cleanup.summary.md` | No deviations |
+| `04-003-download-resilience` | COMPLETE | retryDownload (non-complete tracks only, partial-progress start); rehydrateTaskMap on launch (allTasks + findTrackByStreamURL, cancel orphans, mark abandoned as failed); storageUsage footer in LibraryTab Downloads section | summary: `workflow/packets/04-003-download-resilience.summary.md` | Initial retry progress from actual completed fraction (not 0 per sketch); rehydration handles active tasks for any DB state (handles post-retry relaunch) |
+| `04.5-001-download-restore-reconcile` | COMPLETE | F4-1 🔴 resolved: reordered restore (rehydrate → single final `allDownloads()` → seed mirror for all states); added `whenRestored()` hook; restructured tests (repo state before manager creation); new mirror==authority test; Swift suite 155/0 `** TEST SUCCEEDED **` | summary: `workflow/packets/04.5-001-download-restore-reconcile.summary.md` | None |
+
+## Phase 4 boundary review (2026-05-18)
+
+Scope: `03.5-001-pre-phase4-cleanup` (Phase-3 debt, shipped in the Phase-4 window),
+`04-001-download-one-recording`, `04-002-concert-download-and-library`,
+`04-002.5-sqlite-test-cleanup`, `04-003-download-resilience`.
+
+**Verdict: NOT cleared to close.** One 🔴 blocking defect (F4-1) — the Swift suite is
+deterministically red and the `04-003` summary implied it green. This is the exact
+predecessor failure mode the workflow exists to catch (a written status ahead of the
+code). Phase 4 is *implemented* but cannot be marked COMPLETE until F4-1 is fixed.
+
+**Build checks:**
+
+- `python -m pytest backend/tests/` → **137 passed, 2 skipped** (`live_ia`, skipped by
+  default — no live IA in the default run; `CLAUDE.md` § Testing holds). The
+  `03.5-001` summary's "flaky `test_cache.py`/`test_http_client.py` failures" **do not
+  reproduce** (full green) — same conclusion as the Phase-3 review; transient build-session
+  artifact, current truth 137/2.
+- `ruff check backend/` → **all checks passed** (F2-6 holds).
+- `mypy backend/` → **3 errors, all test-only** (`tests/models/test_ia.py:9`,
+  `tests/aggregation/test_aggregate.py:50`, `tests/aggregation/test_orchestrate.py:27`)
+  — unchanged F2-8 `list[dict]`-vs-`list[IAFile]` (runtime-OK via Pydantic); **50 source
+  files clean**.
+- `xcodebuild test` (iPhone 16 sim) → **153 passed, 1 FAILED**. `** TEST FAILED **`.
+  Failing: `DownloadManagerTests.retryDownloadDoesNothingWhenAllTracksComplete()`.
+  **Deterministic** (3/3 in isolation; also fails in the full suite). End-state varies by
+  init-race ordering (`.downloading(0.0)` isolated, `.failed("Download interrupted…")`
+  full-suite) but is **never** the expected `.downloaded`. Not flaky, not environmental.
+  → **F4-1 (🔴)**.
+
+**F4-1 root cause (cited):** `DownloadManager.init` fires `Task { await restoreState() }`
+(`DownloadManager.swift:25`) with no ordering vs. subsequent repo mutation.
+`restoreState()` seeds `recordingProgress` from one `allDownloads()`
+(`DownloadManager.swift:88-92`), then `rehydrateTaskMap()` does a **second**
+`allDownloads()` (`:112-122`) and writes the mirror **only** for active-task or
+still-`.downloading` records. A record that became `.downloaded` (or `.failed`) between
+the two reads keeps the stale snapshot-1 mirror value — the in-memory mirror desyncs from
+the authoritative repository (violates CONVENTIONS §20: "the repository is the authority
+— the mirror must be reconciled *from* it"). The retry no-op itself is correct
+(`failedTracks` empty → `guard` returns, `DownloadManager.swift:59-60`); the bug is the
+un-reconciled restore. Fix: reconcile the mirror from the **final** `allDownloads()`
+snapshot for *all* states, and expose a deterministic "restored" hook so the test awaits
+it instead of `Task.sleep(100ms)` (the `04-003` summary itself flagged the `Task.sleep`
+as fragile — it is now deterministically failing, not merely flaky). Code is wrong →
+follow-up packet, **blocking**.
+
+**Cross-file consistency:**
+
+- 🔴 **F4-1** — above. The defect sits squarely on the Phase-4 "Done when" recovery path.
+- 🟡 **F4-2 — `download_tracks.local_path` stores an absolute container path; design
+  forbids it; and it is dead data.** `DownloadManager.swift:160` stores
+  `storage.url(for:file:)?.path` (absolute `/var/mobile/Containers/Data/Application/<UUID>/…`).
+  `02-DATA-MODEL.md` §5: the file lives via `AudioStorage`, "**never a hard path in the
+  DB**" (`00-ARCHITECTURE.md` §3 hook 1). The path is fragile across reinstall/container
+  moves *and* unused: playback reconstructs via `AudioStorage.url`/`fileExists`
+  (`PlaybackCoordinator.swift:184-187`, never reads `local_path`); `deleteDownload`
+  removes the whole dir by identifier (`DownloadManager.swift:82`, never reads it);
+  `tracksForRecording` (its only consumer) has **no production caller**
+  (`04-002` summary confirms `deleteDownload` does not call it). Design right, code wrong
+  → follow-up: drop `local_path` + prune `tracksForRecording`.
+- 🟢 **F4-3 — checked-write drift (F3-3 trigger now fired).** `SQLiteDownloadRepository`
+  is the 3rd §18 impl; the F3-3 "DRY at 3rd impl" condition is met. All three honor
+  "no silent write — log `[LibrarySQLite]`", but: `SQLiteLibraryRepository.checkedStep`
+  helper logs `rc=` (`SQLiteLibraryRepository.swift:243`);
+  `SQLitePlaybackHistoryRepository` inlines, logs `rc=` (`:37-40`);
+  `SQLiteDownloadRepository` inlines ~12 sites **omitting `rc=`** (weaker debugging).
+  Cleanup, not a bug; captured in CONVENTIONS §18.
+- 🟢 **F4-4 — `DownloadManager.download()` has no re-entrancy guard.** A double-tap
+  before the button disables enqueues duplicate `URLSessionDownloadTask`s
+  (`DownloadManager.swift:40-45`); UI disabled-state mitigates and `INSERT OR REPLACE`
+  keeps the repo consistent. Minor.
+- 🟢 **F4-5 — per-download `bytes` not stored.** Design's `DownloadPin` shape is
+  `(recordingID, status, localPathRef, bytes)`; usage is a global `AudioStorage.usage()`
+  filesystem walk shown as one footer total (`LibraryTab.swift:57-61`). Honest deferral,
+  not a "Done when" gate, not a doc edit. F2-10 (`AggregatedTrack.size` unexposed) still
+  carried — it would feed a per-download estimate later.
+- 🟢 **F1-4 spread continues.** `Color.accentColor` still at `ConcertDetailView.swift:327`
+  (plus the NowPlaying sites from Phase 3). Phase-6 polish; sweep all at once. Folded
+  into F1-4.
+- Positives: the **hard** audio constraint holds — `DownloadManager` fetches the opaque
+  `track.streamUrl` (`archive.org/download/…`) via background `URLSession`; the backend
+  is never involved; **zero backend changes** in `04-001`..`04-003` (the only backend
+  edit is `03.5-001`'s F3-5 one-line 501 string). Files stored verbatim
+  (`AudioStorage.store` writes `Data` as-is, no transcode). `AudioStorage` is the sole
+  audio path (manager writes, coordinator reads). Download state only via
+  `DownloadRepository` — no raw SQLite in views. `SQLiteDownloadRepository` follows §18
+  exactly (shared `LibraryDatabase` pointer, file-local `SQLITE_TRANSIENT`,
+  parameterized SQL, `nonisolated(unsafe) db`). DI follows §19 (`\.downloadRepository`
+  InMemory default). `nonisolated` delegate→`@MainActor` hop matches §14/§20.
+  `04-002.5` correctly applied the `(repo, _db)` lifetime fix to
+  `SQLiteLibraryRepositoryTests` (the bug `04-002` found in `SQLiteDownloadRepositoryTests`).
+
+**Doc-to-code reconciliation:**
+
+| Issue | Location | Verdict |
+|---|---|---|
+| README "Status: Phase 3 complete… Not yet: offline downloads" | `README.md` | 🔴 **Code is right, doc is wrong.** Phase 4 shipped downloads. The recurring predecessor anti-pattern (cf. F0-1/F1-1/F2-1/F3-1). **Fixed in this review** (status block honestly notes the F4-1 blocker; manual-test items 13–15 added). |
+| `DownloadPin` "the file lives via `AudioStorage`, **never a hard path in the DB**" | `02-DATA-MODEL.md` §5 vs `download_tracks.local_path` (absolute container path, `DownloadManager.swift:160`) | **Design is right, code is wrong** → follow-up **F4-2** (not a doc edit). |
+| `DownloadPin` shape includes `bytes` | `02-DATA-MODEL.md` §5 | Not stored; global usage footer instead. Honest deferral → F4-5 (not a doc edit). |
+| F3-6 `TagKind` purpose enum; F3-7 track search reuses aggregated `tracks`; F3-8 CloudKit seam wording | `02-DATA-MODEL.md` §2/§5, `00-ARCHITECTURE.md` §4 | **Verified present** — `03.5-001` landed all three edits; §5 reads `kind … {favorite,playlist,smart,user}`, §2 reads "v1 track search queries this persisted aggregation table", §5 reads "repository protocol … is the CloudKit swap seam". F3-6/7/8 **RESOLVED + confirmed**. |
+| F3-5 stale 501 reason string | `backend/routes/search.py` | **Verified** — `_NOT_YET["concert"]="concert search is not implemented"`; `test_search.py` asserts it; ruff clean. F3-5 **RESOLVED**. |
+| `03-CLIENT-AND-PLAYBACK.md` §5 (background URLSession, concert-level = preferred recording, verbatim, badged, prefer-local) | design vs `04-001`/`04-002` | **Matches.** No discrepancy. §5 "uncut-master alternate download target" not shipped — `04-001` explicitly scoped it out (future-F2 hook); honest deferral, not a "Done when" gate. |
+| `00-ARCHITECTURE.md` §2.2 "backend does NOT manage downloads / serve audio bytes" | design vs code | **Upheld** — client owns fetch/progress/retry/storage entirely; backend untouched. Hard constraint preserved. |
+
+**Phase 4 "Done when":** *"airplane mode + a downloaded recording = music plays, and a
+download interrupted by a network drop recovers instead of getting stuck."* —
+**Met in implementation, NOT verifiably green; gated on F4-1.** Prefer-local airplane
+path is implemented (`PlaybackCoordinator.loadCurrentTrack` local-`file://` branch) and
+unit-tested (`04-001` prefer-local tests pass). Recovery is implemented (retry of
+non-complete tracks + `getAllTasks` rehydration + interrupted→`failed`→Retry). But the
+single failing test sits **exactly on the restore/reconcile path** that backs the
+"recovers instead of getting stuck" guarantee, and the defect is a real mirror/authority
+desync (CONVENTIONS §20). The phase delivers the feature but cannot be signed off as
+honestly usable until F4-1 is closed and the suite is green.
+
+**Conventions formalized:** §20 added (background-`URLSession` download lifecycle —
+appeared `04-001`/`04-003`; documents the manager/delegate/rehydration shape and the
+"repository is the authority" rule, with the F4-1 defect noted in-line). §18 extended
+(`SQLiteDownloadRepository` as the 3rd impl; F3-3 checked-write-DRY trigger now fired →
+F4-3). §19 extended (`\.downloadRepository`; `DownloadManager` injected as `@Observable`,
+not via the key).
+
+**Follow-ups:**
+
+| # | Item | Urgency | Notes |
+|---|---|---|---|
+| F4-1 | `DownloadManager.restoreState`/`rehydrateTaskMap` un-reconciled two-read; mirror desyncs from authoritative repo; `retryDownloadDoesNothingWhenAllTracksComplete()` fails deterministically (Swift suite red) | 🔴 → ✅ **RESOLVED** | Closed by `04.5-001` (rehydrate → single final `allDownloads()` → seed mirror for all states; `whenRestored()` hook; tests restructured + a mirror==authority test added). **Independently verified 2026-05-18:** Swift **155/0 `** TEST SUCCEEDED **`**, backend 137/2, scope clean, 04-003 resilience preserved. |
+| F4-2 | `download_tracks.local_path` = absolute container path; `02-DATA-MODEL.md` §5 forbids ("never a hard path in the DB"); fragile across reinstalls; dead data (`tracksForRecording` has no production caller) | 🟡 important | Follow-up packet: drop `local_path`, prune `tracksForRecording`. Design right, code wrong. Fix when next touching downloads. |
+| F4-3 | Unify checked-write into one `checkedStep(_:context:)` logging `rc` across the 3 SQLite repos (F3-3 trigger fired; Download omits `rc=`) | 🟢 optional | Supersedes F3-3. Captured CONVENTIONS §18. No behavior bug. |
+| F4-4 | `DownloadManager.download()` no re-entrancy guard (double-tap → duplicate tasks) | 🟢 optional | UI disabled-state + `INSERT OR REPLACE` mitigate. Minor. |
+| F4-5 | Per-download `bytes` not stored (design `DownloadPin` field); global usage footer only | 🟢 optional | Honest deferral; ties to carried F2-10. Not a gate, not a doc edit. |
+
+Phase-3 follow-ups status after this review: **F3-2 RESOLVED** (`03.5-001` shared
+`LibraryDatabase` + WAL + `busy_timeout=3000` + checked writes — verified across all 3
+repos this review). **F3-5/F3-6/F3-7/F3-8 RESOLVED + confirmed** (`03.5-001`; verified
+against `routes/search.py`, `02-DATA-MODEL.md`, `00-ARCHITECTURE.md`). **F3-3 superseded
+by F4-3** (now actionable — 3rd impl shipped). F3-4/F3-9/F3-10 carried 🟢 (not revisited;
+still optional). **F2-8 carried** — 3 test-only `mypy`, source clean, 🟢. F2-7/F2-9/
+F2-10/F2-11 and F1-3/F1-4 carried 🟢 (F1-4 spread noted above).
+
+**Gating Phase 5:** **F4-1 (🔴) MUST be resolved and the Swift suite green before Phase
+4 is closed and Phase 5 begins** — Phase 5 does not start until Phase N is honestly
+usable (`development_roadmap.md` core principle). No user value/preference decision is
+pending for the Phase-4 close (D2b reconfirmed stay-local through Phase 4, 2026-05-18).
+The next Phase-5 gate is D6 (cover-art visual reference points) — user, by Phase 5.
+
+### Resolution addendum (2026-05-18, post-`04.5-001` verification)
+
+F4-1 **closed by `04.5-001-download-restore-reconcile`** and **independently verified by
+Review** (not just the packet summary): `restoreState()` now runs `rehydrateTaskMap()`
+first (repo-mutation only — interrupted `downloading`→`failed` sweep preserved), then a
+**single** authoritative `allDownloads()` read seeds `recordingProgress` for every record
+(active-task → computed `.downloading`; else `record.state` verbatim) — mirror == repo
+authority (CONVENTIONS §20). Added `whenRestored()` (stored-`Task` await, race-free);
+tests restructured to prime the repo *before* manager creation and `await whenRestored()`
+instead of `Task.sleep`; new `restoreMirrorEqualsRepositoryAfterRestore()` asserts the
+exact ex-desync. **Verified:** `xcodebuild test` → **155 passed, 0 failed,
+`** TEST SUCCEEDED **`**; `pytest backend/tests/` → 137 passed / 2 skipped; change scope
+limited to `DownloadManager.swift` + `DownloadManagerTests.swift` + `CONVENTIONS.md` §20
++ own status row (no unrelated files); `04-003` resilience tests still green (no
+regression). **Phase 4 is now COMPLETE + reviewed; Phase 5 is unblocked** (only D6
+remains, a Phase-5 user input — not a code gate). Residual non-blocking debt carried
+into Phase 5: F4-2 🟡, F4-3/4/5 🟢, and the long-carried 🟢 set. Minor note (not a
+follow-up): the post-`retryDownload()` `Task.sleep(100ms)` remains in two tests — the
+retry inner `Task` has no hook; explicitly accepted in the `04.5-001` packet scope, tests
+pass deterministically.
 
 ## Phase 3 boundary review (2026-05-18)
 
@@ -394,11 +580,11 @@ authoritative; this is the at-a-glance tracker.
 - ~~**D1 (minimum iOS)**~~ — RESOLVED 2026-05-16: iOS 17.
 - ~~**Setlist source**~~ — RESOLVED 2026-05-16: IA-description parse only for v1; revisit
   only if insufficient in use.
-- ~~**D2b (backend host)**~~ — RESOLVED 2026-05-17: consciously deferred — stay local
-  through Phase 2; revisit trigger = first off-home-Wi-Fi need. No backend code depends
-  on it. **Phase 4 Plan should reconfirm** for a downloads-capable build (offline
-  downloads make a real off-network URL likelier even if the trigger hasn't formally
-  fired) — user call, not a code blocker. See `docs/design/04-OPEN-QUESTIONS.md`.
+- ~~**D2b (backend host)**~~ — RESOLVED 2026-05-18: stay local through Phase 4.
+  Downloads go phone→`archive.org` directly; backend needed only for discovery
+  (search/browse at home). Deploying later is ~30 min config, no code change. Revisit
+  trigger unchanged: first off-home-Wi-Fi discovery need. See
+  `docs/design/04-OPEN-QUESTIONS.md`.
 - ~~**D3 (CloudKit vs local)**~~ — RESOLVED 2026-05-18: **local-only v1**. CloudKit
   deferred (additive, no data migration; revisit trigger = 2nd Apple device or
   clean-reinstall resilience mattering). See `docs/design/04-OPEN-QUESTIONS.md`.
@@ -446,3 +632,36 @@ authoritative; this is the at-a-glance tracker.
   favorites + minimal playlists** (smart collections / tag UI / notes deferred). Both are
   the documented defaults, now confirmed not assumed. Phase 3 Plan is unblocked. Recorded
   in `docs/design/04-OPEN-QUESTIONS.md` (D3; ambiguity 1) with history preserved.
+- **2026-05-18 (Phase 4 pre-Plan)** — **D2b reconfirmed: stay local through Phase 4**
+  (user). Downloads go phone→`archive.org` directly, no backend proxy; backend only
+  needed for discovery (search/browse) which happens at home on Wi-Fi. Deploy later is
+  ~30 min config, no code change. Cleanup packet `03.5-001` queued before first Phase 4
+  packet: F3-2 (shared SQLite + WAL + checked writes), F3-5 (stale 501 string),
+  F3-6/7/8 (design-doc reconciliation).
+- **2026-05-18 (Phase 4 boundary review)** — Phase 4 **IMPLEMENTED but NOT cleared to
+  close.** `03.5-001` + `04-001`..`04-003` done; downloads ship end-to-end (background
+  `URLSession` phone→`archive.org`, verbatim via `AudioStorage`, prefer-local,
+  per-recording + concert-level buttons, Library Downloads section, retry + relaunch
+  rehydration). **1 🔴 blocking: F4-1** — `DownloadManager.restoreState`/
+  `rehydrateTaskMap` desync the in-memory mirror from the authoritative repository;
+  `DownloadManagerTests.retryDownloadDoesNothingWhenAllTracksComplete()` fails
+  deterministically (Swift suite 153/1). The `04-003` summary's implied-green test claim
+  and the prior "fully green as of `04-002.5`" note were **stale** — the predecessor
+  anti-pattern the workflow exists to catch. F4-1 gates Phase-4 close and Phase-5 start.
+  F4-2 🟡 (`local_path` absolute path — design forbids, dead data) + F4-3/4/5 🟢 recorded.
+  One 🔴 (README "Phase 3 / not yet downloads") **resolved in-review** (precedent
+  F0-1/F1-1/F2-1/F3-1). Phase-3 debt **F3-2/5/6/7/8 confirmed RESOLVED** by `03.5-001`
+  (verified against code + docs); F3-3 superseded by F4-3. CONVENTIONS §20 added,
+  §18/§19 extended. No backend changes in `04-00x`; the hard audio-bytes constraint and
+  `00-ARCHITECTURE.md` §2.2 hold. Backend `pytest` 137/2, `ruff` clean, `mypy` 3
+  test-only.
+- **2026-05-18 (Phase 4 close)** — **F4-1 resolved by `04.5-001-download-restore-reconcile`
+  and independently verified by Review.** `DownloadManager` restore now reconciles the
+  in-memory mirror from a single authoritative `allDownloads()` read after rehydration
+  (CONVENTIONS §20); `whenRestored()` replaces the test `Task.sleep` race; a
+  mirror==authority regression test was added. Verified: Swift **155/0
+  `** TEST SUCCEEDED **`**, backend 137/2, scope clean, `04-003` resilience preserved.
+  **Phase 4 → COMPLETE + reviewed; Phase 5 unblocked.** Phase-3 debt F3-2/5/6/7/8
+  confirmed resolved (`03.5-001`). Residual non-blocking debt into Phase 5: F4-2 🟡
+  (absolute `local_path` / dead `tracksForRecording`), F4-3/4/5 🟢, long-carried 🟢 set.
+  Phase 5 (cover art) gates only on **D6** (user visual reference points, by Phase 5).

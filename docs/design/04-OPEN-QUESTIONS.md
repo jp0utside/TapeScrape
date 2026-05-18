@@ -54,6 +54,13 @@ blocking. Override anytime.
   needs to be reachable off home Wi-Fi** (cellular / away from home). This is the
   Phase-1-boundary decision the roadmap asked for — the decision is "not yet, and here is
   exactly when." No backend code depends on it.
+  **Decision 2026-05-18 (user, Phase 4 boundary):** *stay local through Phase 4.*
+  Downloads go directly from the phone to `archive.org` — no backend proxy — so offline
+  playback works without a deployed backend. The backend is only needed for *discovering*
+  new music (search/browse), and that flow happens at home on Wi-Fi. The typical pattern
+  is browse-at-home → download → listen-anywhere. Deploying later (Fly.io/Railway) is a
+  config change (~30 min), no code architecture change. Revisit trigger unchanged: first
+  time the app needs to discover music off home Wi-Fi.
 - **D3 — CloudKit sync vs local-only.** v1 is **local-only**; the only v1 cost paid now
   is a custom-zone-shaped library container so a future `LibraryZone`/shared zones (F8)
   need no migration. Decide at Phase 3 (library). Inputs: how many Apple devices run it;

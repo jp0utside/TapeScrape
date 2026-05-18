@@ -21,7 +21,7 @@ router = APIRouter()
 
 _SUPPORTED_TYPES = {"artist", "concert", "track"}
 _NOT_YET = {
-    "concert": "concert aggregation lands in packets 02-002/02-003",
+    "concert": "concert search is not implemented",
 }
 
 

@@ -38,11 +38,14 @@ final class PlaybackCoordinator {
 
     private let backend: any PlayerBackend
     private let history: any PlaybackHistoryRepository
+    private let storage: AudioStorage
 
     init(player: any PlayerBackend = AVPlayerBackend(),
-         history: any PlaybackHistoryRepository = InMemoryPlaybackHistoryRepository()) {
+         history: any PlaybackHistoryRepository = InMemoryPlaybackHistoryRepository(),
+         storage: AudioStorage = DocumentsAudioStorage()) {
         self.backend = player
         self.history = history
+        self.storage = storage
         setupCallbacks()
         setupRemoteCommands()
         setupInterruptionHandling()
@@ -171,13 +174,23 @@ final class PlaybackCoordinator {
             stop()
             return
         }
-        let track = queue[currentIndex].track
+        let item = queue[currentIndex]
+        let track = item.track
         currentTrack = track
         elapsed = 0
         duration = track.durationSeconds ?? 0
-        guard let url = URL(string: track.streamUrl), !track.streamUrl.isEmpty else {
-            state = .failed(PlaybackError.invalidURL)
-            return
+
+        let url: URL
+        if let ctx = item.concertContext,
+           storage.fileExists(identifier: ctx.recordingIdentifier, file: track.filename),
+           let localURL = storage.url(for: ctx.recordingIdentifier, file: track.filename) {
+            url = localURL
+        } else {
+            guard let remoteURL = URL(string: track.streamUrl), !track.streamUrl.isEmpty else {
+                state = .failed(PlaybackError.invalidURL)
+                return
+            }
+            url = remoteURL
         }
         state = .loading
         backend.replaceAndPlay(url: url)

@@ -2,10 +2,14 @@ import SwiftUI
 
 struct LibraryTab: View {
     @Environment(\.libraryRepository) private var library
+    @Environment(\.downloadRepository) private var downloadRepo
+    @Environment(DownloadManager.self) private var downloadManager
     @State private var favorites: [ConcertSnapshot] = []
+    @State private var downloads: [DownloadRecord] = []
     @State private var playlists: [Tag] = []
+    @State private var storageUsage: UInt64 = 0
 
-    private var isEmpty: Bool { favorites.isEmpty && playlists.isEmpty }
+    private var isEmpty: Bool { favorites.isEmpty && downloads.isEmpty && playlists.isEmpty }
 
     var body: some View {
         NavigationStack {
@@ -24,6 +28,36 @@ struct LibraryTab: View {
                                     NavigationLink(value: snapshot) {
                                         FavoriteRow(snapshot: snapshot)
                                     }
+                                }
+                            }
+                        }
+                        if !downloads.isEmpty {
+                            Section {
+                                ForEach(downloads) { record in
+                                    NavigationLink(value: ConcertSnapshot(
+                                        id: record.concertID,
+                                        artist: record.artist,
+                                        date: record.date,
+                                        venue: record.venue,
+                                        location: nil
+                                    )) {
+                                        DownloadRow(record: record)
+                                    }
+                                }
+                                .onDelete { indexSet in
+                                    let toDelete = indexSet.map { downloads[$0] }
+                                    downloads.remove(atOffsets: indexSet)
+                                    for record in toDelete {
+                                        downloadManager.deleteDownload(identifier: record.identifier)
+                                    }
+                                }
+                            } header: {
+                                Text("Downloads")
+                            } footer: {
+                                if storageUsage > 0 {
+                                    Text(ByteCountFormatter.string(
+                                        fromByteCount: Int64(storageUsage), countStyle: .file
+                                    ))
                                 }
                             }
                         }
@@ -57,7 +91,34 @@ struct LibraryTab: View {
 
     private func refresh() async {
         favorites = await library.favoritedConcerts()
+        downloads = await downloadRepo.completedDownloads()
         playlists = await library.playlistTags()
+        storageUsage = downloadManager.storageUsage()
+    }
+}
+
+private struct DownloadRow: View {
+    let record: DownloadRecord
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.date).font(.headline)
+                Text(record.artist)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                if let venue = record.venue {
+                    Text(venue)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 2)
+            Spacer()
+            Image(systemName: "arrow.down.circle.fill")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+        }
     }
 }
 
