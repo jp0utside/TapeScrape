@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ConcertDetailView: View {
-    let concert: ConcertResponse
+    let concert: ConcertDetailResponse
 
     @Environment(PlaybackCoordinator.self) private var playback
 
@@ -28,15 +28,16 @@ struct ConcertDetailView: View {
             ForEach(concert.recordings, id: \.identifier) { recording in
                 Section {
                     ForEach(recording.tracks, id: \.index) { track in
+                        let idx = recording.tracks.firstIndex(where: { $0.index == track.index }) ?? 0
                         TrackRow(
                             track: track,
                             isCurrentTrack: playback.currentTrack?.filename == track.filename
                         ) {
-                            playback.play(track)
+                            playback.play(recording.tracks, startingAt: idx)
                         }
                     }
                 } header: {
-                    Text(recording.source ?? recording.identifier)
+                    Text(recording.source ?? recording.sourceQuality)
                 }
             }
         }

@@ -13,10 +13,11 @@ stand. It is *not* an architecture doc — that's `docs/design/`; not sequencing
 
 ## Current state
 
-- **Phase:** 2 — planning (2026-05-17). Phase 1 COMPLETE + reviewed.
-- **Repo:** Phase 1 complete. One concert (GD 1977-05-08) streams end-to-end: backend fetches/caches IA metadata, client plays audio directly from archive.org.
-- **Next action:** Write Phase 2 packet `02-002` (concert grouping: canonical venue clustering, concert key, persist `Concert`/`Recording`/`Track`, `SourceQuality`, preferred-recording pick). Builds on `aggregation/canonicalize.py` + the search/cache layer from `02-001`.
+- **Phase:** 2 — COMPLETE + reviewed (2026-05-17). Phase 1 COMPLETE + reviewed.
+- **Repo:** Phase 2 complete. Artist search → paginated concert list → concert detail → play-through with full-screen NowPlayer, lock-screen controls, and a legible playback state machine. Backend canonicalizes + aggregates IA into persisted SQLite concerts, on-demand-when-stale.
+- **Next action:** Plan Phase 3 (library/queue) — **unblocked**: D3 and library-subset depth resolved 2026-05-18 (see below). First Plan step: decide whether 🟡 F2-2 (metadata-cache regression) is a Phase-3-opening fix packet or folded into early Phase 3 work; then write the first Phase 3 packet (smallest: favorite tag on concerts/recordings).
 - **Phase 2 decisions (2026-05-17):** D2b backend host → *consciously deferred*, stay local through Phase 2 (revisit trigger: first off-home-Wi-Fi need). Re-aggregation trigger → on-demand-when-stale. See `docs/design/04-OPEN-QUESTIONS.md`.
+- **Phase 3 decisions (2026-05-18):** D3 → **local-only v1** (CloudKit later, additive, no migration; revisit trigger = 2nd device / clean-reinstall resilience). Library subset → **favorites + minimal playlists** (defer smart collections / tag UI / notes). See `docs/design/04-OPEN-QUESTIONS.md`.
 
 ### Phase 0 packet plan
 
@@ -44,9 +45,10 @@ Aggregation packets depend on the fix packet landing first.
 |---|---|---|
 | `01.5-001-iaclient-di` | Single `IAClient` via FastAPI lifespan + DI; non-serializing rate limiter (closes F1-2, F1-5/F0-2). Prerequisite for parallel aggregation | COMPLETE |
 | `02-001-artist-search` | Backend: `GET /search?type=artist` + canonical artist key + search cache | COMPLETE |
-| `02-002` (tentative) | Backend: aggregation (venue clustering, concert key, persist, preferred pick) | not written |
-| `02-003` (tentative) | Backend: `/concerts?artist=` list endpoint + on-demand-when-stale re-aggregation | not written |
-| `02-004+` (tentative) | Client: search screen, concert list, detail best-first, full-screen NowPlaying, playback state machine | not written |
+| `02-002-concert-aggregation` | Backend: aggregation (venue clustering, concert key, persist, preferred pick) | COMPLETE |
+| `02-003-concert-list-endpoint` | Backend: `/concerts?artist=` list + `/concerts/{id}` detail, on-demand-when-stale | COMPLETE |
+| `02-004-client-search-browse` | Client: debounced artist search → concert list → detail | COMPLETE |
+| `02-005-player-queue-nowplaying` | Client: queue, KVO state machine, full-screen NowPlaying, system integration | COMPLETE |
 
 ## Phase status
 
@@ -54,8 +56,8 @@ Aggregation packets depend on the fix packet landing first.
 |---|---|---|
 | 0 — Set the stage | COMPLETE | all 4 packets done 2026-05-16; boundary review passed 2026-05-16 (1 blocking follow-up resolved: README updated) |
 | 1 — One concert E2E | COMPLETE | started 2026-05-16; all 3 packets done 2026-05-16; boundary review passed 2026-05-16 (1 blocking follow-up: README update) |
-| 2 — Browse/search/player | PLANNING | started 2026-05-17; decisions resolved (D2b deferred-local, re-aggregation on-demand-when-stale); first packet = review-gated fix `01.5-001` |
-| 3 — Library/queue | NOT STARTED | |
+| 2 — Browse/search/player | COMPLETE | all 6 packets done 2026-05-17 (`01.5-001`,`02-001`..`02-005`); boundary review passed 2026-05-17 (1 blocking follow-up resolved in-review: README; 4 🟡 debt follow-ups recorded) |
+| 3 — Library/queue | NOT STARTED | gated on user decisions D3 + library-subset depth |
 | 4 — Downloads/offline | NOT STARTED | |
 | 5 — Cover art | NOT STARTED | |
 | 6 — Polish/TestFlight | NOT STARTED | |
@@ -82,6 +84,108 @@ decision history are written by Review/Plan, never by Build. Format:
 | `01-003-client-playback` | COMPLETE | CatalogClient actor; PlaybackCoordinator + PlayerBackend protocol; ConcertDetailView + MiniPlayerView; HomeTab fetches Cornell '77; AVAudioSession + UIBackgroundModes; 26 Swift tests pass | summary: `workflow/packets/01-003-client-playback.summary.md` | loading state is pass-through in Phase 1 (KVO observation Phase 2); PlayerBackend.replaceAndPlay(url:) keeps AVFoundation out of test mock |
 | `01.5-001-iaclient-di` | COMPLETE | Single `IAClient` in FastAPI lifespan + `Depends`-injected; rate-limiter lock now O(1) (sleep+HTTP outside it); two module singletons removed; 28 pass + 3 live_ia skipped | summary: `workflow/packets/01.5-001-iaclient-di.summary.md` | Phase-1 lock spanned only `asyncio.sleep` (not HTTP) — fix + retuned concurrency test still apply; cache singleton (`concerts.py:15`) left as future fix per scope |
 | `02-001-artist-search` | COMPLETE | `GET /search?type=artist` collapses messy IA `creator` → canonical artists; `aggregation/canonicalize.py` (pure, §5.1); `SearchCache`; `get_ia_client` promoted to `routes/deps.py`; concert/track → honest 501; 62 pass + 3 live_ia skipped | summary: `workflow/packets/02-001-artist-search.summary.md` | Dropped one off-spec HTML-entity test case; both caches now module-global in 2 places — natural trigger for the recorded app.state follow-up at Phase 2 review |
+| `02-002-concert-aggregation` | COMPLETE | Aggregation engine: venue clustering (token-set 0.85), `SourceQuality` parsing (MTX>SBD>AUD>FM>UNKNOWN), concert grouping by `(artist,date,venue)`, UUID5 IDs, preferred-recording pick, SQLite persistence via `db/` package; 111 pass + 3 live_ia skipped | summary: `workflow/packets/02-002-concert-aggregation.summary.md` | MTX checked before SBD in regex chain; `audience` added to AUD pattern; `is_marker` track flag deferred to client packet |
+| `02-003-concert-list-endpoint` | COMPLETE | `GET /concerts?artist=` paginated list + `GET /concerts/{id}` detail, both backed by persisted aggregation; on-demand-when-stale trigger with 30s timeout → 504; `ConcertListResponse`/`ConcertDetailResponse`; `source_quality` on `RecordingResponse`; `concerts_page_size` config; Phase 1 `_CONCERT_MAP` removed; 21 route tests + 122 suite-wide pass | summary: `workflow/packets/02-003-concert-list-endpoint.summary.md` | — |
+| `02-004-client-search-browse` | COMPLETE | SearchTab with debounced artist search → ConcertListView (paginated, Load more) → ConcertDetailView; `CatalogClient` gains `searchArtists`/`getConcerts`/`getConcertDetail`; Swift models updated (`ConcertDetailResponse`, `ConcertListItem`, `ArtistMatch`); HomeTab updated to browse via GD concert list; BUILD SUCCEEDED, 31 Swift tests pass | summary: `workflow/packets/02-004-client-search-browse.summary.md` | `downloadCount` retained on wire (backend kept it); HomeTab navigates to GD concert list rather than directly to Cornell '77 |
+| `02-005-player-queue-nowplaying` | COMPLETE | KVO-based state machine (loading/stalled/failed states); queue + sequential auto-advance; skipForward/skipBack (>3s restart convention); NowPlayingView (scrubber, track list, art placeholder); MPRemoteCommandCenter + MPNowPlayingInfoCenter; AVAudioSession interruption handling; BUILD SUCCEEDED, 53 Swift tests pass | summary: `workflow/packets/02-005-player-queue-nowplaying.summary.md` | Sendable warnings on AVPlayerBackend KVO closures (non-errors at minimal concurrency); `PlaybackError` moved to PlayerBackend.swift |
+
+## Phase 2 boundary review (2026-05-17)
+
+Scope: `01.5-001`, `02-001`, `02-002`, `02-003`, `02-004`, `02-005`.
+
+**Build checks:** `pytest backend/tests/` → **122 passed, 2 skipped** (`live_ia`,
+skipped by default; the count is 2 not 3 because `02-003` removed the Phase-1
+slug route and its live test — legitimate, not a regression). `xcodebuild test`
+→ **53 Swift Testing tests pass**, app build clean (only a benign AppIntents
+metadata note; no Sendable warnings in the app build). No linter/type-checker in
+CI; run ad hoc for the review: `ruff` → 13 trivial findings (unused imports +
+1 f-string, all auto-fixable); `mypy` → 47 source files clean, 1 test-only
+type error. Details in F2-6 / F2-8.
+
+**Cross-file consistency:**
+
+- 🟡 **Metadata caching regressed (dead code + design divergence).**
+  `core/cache.py:7 MetadataCache` now has **no production caller**: Phase 1's
+  `routes/concerts.py` used it; `02-003` rewrote that route and dropped it.
+  `ia/metadata.py:5 get_item_metadata` does a bare `client.get(/metadata/..)`
+  with no caching, and `orchestrate.py:63-68` calls it per sampled item on every
+  stale re-aggregation. `00-ARCHITECTURE.md` §2.1 explicitly requires ~24 h
+  persistent metadata caching ("IA is slow and rate-limited; one cache warmed
+  once"). Code is wrong vs. design → F2-2.
+- 🟡 **Two divergent audio-format policies.** Parse-time denylist
+  `models/ia.py:3 _UNSUPPORTED_FORMATS={"Ogg Vorbis","Shorten"}` vs. aggregate-time
+  allowlist `aggregate.py:23 _PLAYABLE_FORMATS`. The allowlist silently drops
+  iOS-playable bitrate-labelled MP3s (e.g. "64Kbps MP3", "128Kbps MP3"). CLAUDE.md
+  says drop unplayable formats *at parse* — one policy, one layer → F2-4.
+- 🟡 **On-demand-when-stale decision duplicated.** `routes/concerts.py:84-96`
+  checks `get_aggregation_age` then calls `aggregate_artist`, which re-checks
+  staleness itself (`orchestrate.py:34-37`) and may return cached anyway. Two
+  layers own the same rule; drift risk → F2-5.
+- 🟡 **Silent IA failure.** `orchestrate.py:67 except Exception: continue` with
+  no log — a flaky IA is invisible there; CLAUDE.md §Audit requires logging IA
+  errors → F2-3.
+- 🟢 The standing "module-global caches → `app.state`" item (noted in
+  `01.5-001`/`02-001`) has partly dissolved: the `MetadataCache` global is gone
+  (concerts.py rewritten); only `routes/search.py:22 _cache = SearchCache(...)`
+  remains. Downgraded to 🟢, fold into F2-2 if metadata caching is rewired.
+- 🟢 API naming drift: `ConcertListItem` exposes `display_artist`/`display_venue`;
+  `ConcertDetailResponse` exposes `artist`/`venue` for the same concepts
+  (`models/concert.py:22-47`). Client mirrors faithfully — no decode bug → F2-7.
+- 🟢 `PlaybackCoordinator.skipBack()` calls `seek(to:0)` then `backend.seek(to:0)`
+  (`PlaybackCoordinator.swift:76-77`); `seek(to:)` already hits the backend —
+  redundant, harmless → F2-9.
+- 🟢 `AggregatedTrack.size` is persisted + carried but never surfaced on
+  `TrackResponse` — intentional for Phase 4 downloads; logged so it isn't
+  mistaken for dead data → F2-10.
+- Positives: backend response models ↔ Swift `Codable` structs are 1:1 under
+  `.convertFromSnakeCase`; DI seam (`routes/deps.py`) and `PlayerBackend`
+  testability seam are consistent across packets; no layering violations; the
+  pure-core/edge-I/O split in `aggregation/` holds.
+
+**Doc-to-code reconciliation:**
+
+| Issue | Location | Verdict |
+|---|---|---|
+| README "Status: Phase 1 complete… No browsing, search, library… exist yet" | `README.md` | 🔴 **Code is right, doc is wrong.** Phase 2 shipped all of it. **Fixed in this review** (precedent: F0-1, F1-1). |
+| §2.1 requires ~24 h persistent metadata cache | `docs/design/00-ARCHITECTURE.md` | **Design is right, code regressed.** Not a design edit — follow-up packet F2-2. |
+| Phase 2 roadmap bullet "Aggressive prefetch + retry-with-backoff on streaming" | `docs/development_roadmap.md` | Not shipped; `02-005` explicitly scoped it out and Phase 2 "Done when" does not gate on it. Honest deferral, recorded F2-11 (not a doc edit). |
+| CONVENTIONS §6 client clause was "starter — unverified" | `workflow/CONVENTIONS.md` | Now verified by shipped code (01-003 + 02-005). Updated in this review. |
+| `03-CLIENT-AND-PLAYBACK.md` §4 state machine | `docs/design/03-CLIENT-AND-PLAYBACK.md` | Code matches (loading/stalled/failed + retry). No discrepancy. |
+
+**Phase 2 "Done when":** *"search a band you actually want, find a show, play
+through it like a real music app — and when streaming fails it says so instead of
+hanging silently."* — **Met.** Search (`02-001`/`02-004`), browse/list/detail
+(`02-003`/`02-004`), play-through + legible state + retry (`02-005`) all ship.
+Prefetch/auto-backoff is a roadmap bullet but not a "Done when" gate (F2-11).
+
+**Conventions formalized:** §6 (error handling — client half verified, backend
+still unverified per its own ≥2-packet rule), §14 refined (PlayerBackend now
+carries the observation/state-machine surface), §15 (DI provider in
+`routes/deps.py`), §16 (raw-sqlite3 persistence in the shared cache DB), §17
+(pure aggregation core, I/O at the edges).
+
+**Follow-ups:**
+
+| # | Item | Urgency | Notes |
+|---|---|---|---|
+| F2-1 | Update `README.md` Phase 1 → Phase 2 status | 🔴 blocking | **Resolved in this review** — stale-status README is the explicit predecessor anti-pattern (cf. F0-1, F1-1) |
+| F2-2 | Restore persistent metadata caching: wire `MetadataCache` into `get_item_metadata`/`orchestrate` (and onto `app.state`), **or** consciously drop it and amend `00-ARCHITECTURE.md` §2.1 (needs Plan decision) | 🟡 important | Dead code + IA-politeness regression vs design; safe at 1-user scale tonight but fix early in Phase 3 / fix packet |
+| F2-3 | Log the swallowed exception in `orchestrate.py:67` | 🟡 important | CLAUDE.md §Audit: IA errors must be logged; flaky IA currently invisible |
+| F2-4 | Consolidate audio-format policy to the parse layer; aggregate trusts it (don't re-filter with a divergent allowlist) | 🟡 important | `_PLAYABLE_FORMATS` drops playable bitrate-MP3 variants |
+| F2-5 | De-duplicate the on-demand-when-stale decision (one owner: route or orchestrate, not both) | 🟡 important | Drift risk between `routes/concerts.py` and `orchestrate.py` |
+| F2-6 | `ruff check --fix` (13 trivial: unused imports incl. pre-existing `ia/metadata.py:2`, `aggregate.py:13/15`, `db/repository.py:7 json`; 1 f-string) + consider adding ruff to the loop | 🟢 optional | Auto-fixable; no behavior change |
+| F2-7 | Unify list/detail field naming (`display_artist`/`display_venue` vs `artist`/`venue`) | 🟢 optional | Cosmetic API consistency; no client bug |
+| F2-8 | `tests/aggregation/test_aggregate.py:52` dict-vs-`IAFile` mypy error (runtime-OK via Pydantic) | 🟢 optional | Test-only; source clean |
+| F2-9 | Remove redundant `backend.seek(to:0)` in `PlaybackCoordinator.skipBack()` | 🟢 optional | Harmless double-seek |
+| F2-10 | `AggregatedTrack.size` collected/persisted but unexposed | 🟢 optional | Intentional for Phase 4; noted so it isn't pruned as dead data |
+| F2-11 | Aggressive prefetch + retry-with-backoff on streaming | 🟢 optional | Roadmap Phase 2 bullet, not a "Done when" gate; revisit when streaming robustness is needed (Phase 6 polish-ish) |
+
+Carried Phase-1 🟢 (not revisited this boundary, still optional): F1-3 (`makeTrack`
+helper URL interpolation), F1-4 (`Color.accentColor` → `.tint`, Phase 6 polish).
+
+**Gating Phase 3:** none of the above is 🔴-blocking for starting Phase 3 (the
+only 🔴, F2-1, is resolved). Phase 3 Plan is gated instead on two **user
+decisions**: D3 (CloudKit vs local) and library-subset depth — see Blockers.
 
 ## Phase 1 boundary review (2026-05-16)
 
@@ -158,9 +262,12 @@ authoritative; this is the at-a-glance tracker.
 - ~~**D2b (backend host)**~~ — RESOLVED 2026-05-17: consciously deferred — stay local
   through Phase 2; revisit trigger = first off-home-Wi-Fi need. No backend code depends
   on it. See `docs/design/04-OPEN-QUESTIONS.md`.
-- **D3 (CloudKit vs local)** — user input, by Phase 3. Default local-only.
-- **Library subset depth** — user input, by Phase 3. Default favorites + minimal
-  playlists.
+- ~~**D3 (CloudKit vs local)**~~ — RESOLVED 2026-05-18: **local-only v1**. CloudKit
+  deferred (additive, no data migration; revisit trigger = 2nd Apple device or
+  clean-reinstall resilience mattering). See `docs/design/04-OPEN-QUESTIONS.md`.
+- ~~**Library subset depth**~~ — RESOLVED 2026-05-18: **favorites + minimal playlists**;
+  smart collections / tag UI / notes deferred (additive on the tag-first model). See
+  `docs/design/04-OPEN-QUESTIONS.md` ambiguity 1.
 - ~~**Re-aggregation trigger**~~ — RESOLVED 2026-05-17: on-demand-when-stale
   (re-aggregate an artist on browse iff its persisted aggregation is older than a
   configurable TTL). See `docs/design/04-OPEN-QUESTIONS.md` ambiguity 4.
@@ -179,3 +286,15 @@ authoritative; this is the at-a-glance tracker.
   stay on local `uvicorn` through Phase 2; revisit trigger = first off-home-Wi-Fi need.
   Re-aggregation trigger resolved on-demand-when-stale (orchestrator, user-confirmed).
   First Phase 2 packet is the review-gated fix `01.5-001-iaclient-di` (F1-2 + F1-5/F0-2).
+- **2026-05-17 (Phase 2 boundary review)** — Phase 2 marked COMPLETE + reviewed; all 6
+  packets done. "Done when" met. One 🔴 (README stale status) resolved in-review; 4 🟡
+  debt follow-ups recorded (F2-2 metadata-cache regression, F2-3 silent IA failure,
+  F2-4 split format policy, F2-5 duplicated staleness decision), none blocking Phase 3.
+  CONVENTIONS §15–§17 added, §6/§14 refined. Phase 3 Plan gated on user decisions D3 +
+  library-subset depth.
+- **2026-05-18 (Phase 3 pre-Plan decisions)** — user resolved both Phase-3 gating
+  questions. **D3 → local-only v1** (CloudKit deferred; additive with no data migration;
+  revisit trigger = 2nd Apple device or clean-reinstall resilience). **Library subset →
+  favorites + minimal playlists** (smart collections / tag UI / notes deferred). Both are
+  the documented defaults, now confirmed not assumed. Phase 3 Plan is unblocked. Recorded
+  in `docs/design/04-OPEN-QUESTIONS.md` (D3; ambiguity 1) with history preserved.

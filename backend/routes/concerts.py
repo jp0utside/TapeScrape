@@ -1,130 +1,117 @@
-from fastapi import APIRouter, Depends, HTTPException
+import asyncio
 
-from backend.core.cache import MetadataCache
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from backend.aggregation.aggregate import AggregatedConcert
+from backend.aggregation.orchestrate import aggregate_artist
 from backend.core.config import settings
 from backend.core.http_client import IAClient
 from backend.core.logging import get_logger
-from backend.ia.metadata import get_item_metadata
-from backend.ia.search import search_items
-from backend.models.concert import ConcertResponse, RecordingResponse, TrackResponse
-from backend.models.ia import IAFile, IAItem
+from backend.db.repository import (
+    get_aggregation_age,
+    get_concert_by_id,
+    get_concerts_for_artist,
+)
+from backend.models.concert import (
+    ConcertDetailResponse,
+    ConcertListItem,
+    ConcertListResponse,
+    RecordingResponse,
+    TrackResponse,
+)
 from backend.routes.deps import get_ia_client
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/concerts")
 
-_cache = MetadataCache(settings.cache_db_path)
-
-# Phase 1: hardcoded map of slug → IA search parameters.
-# Phase 2 replaces this with real aggregation + UUID concert IDs.
-_CONCERT_MAP: dict[str, dict] = {
-    "gd-1977-05-08": {"creator": "Grateful Dead", "date": "1977-05-08"},
-}
-
-_TOP_N_RECORDINGS = 3
-
-# Format preference for track deduplication: lower rank = preferred.
-_AUDIO_FORMATS = {"Flac", "24bit Flac", "VBR MP3", "MP3", "WAVE"}
-_FORMAT_RANK: dict[str, int] = {
-    "Flac": 0,
-    "24bit Flac": 0,
-    "VBR MP3": 1,
-    "MP3": 1,
-    "WAVE": 2,
-}
+_AGGREGATION_TIMEOUT = 30.0
 
 
-def _build_tracks(identifier: str, files: list[IAFile]) -> list[TrackResponse]:
-    """Group files by stem, pick best format per track, sort by filename."""
-    audio = [f for f in files if f.format in _AUDIO_FORMATS]
+def _to_list_item(concert: AggregatedConcert) -> ConcertListItem:
+    return ConcertListItem(
+        id=concert.id,
+        display_artist=concert.display_artist,
+        date=concert.date,
+        date_precision=concert.date_precision,
+        display_venue=concert.display_venue,
+        location=concert.location,
+        recording_count=len(concert.recordings),
+        preferred_recording_id=concert.preferred_recording_id,
+    )
 
-    # Deduplicate: for each stem keep the highest-quality format.
-    best: dict[str, IAFile] = {}
-    for f in audio:
-        stem = f.name.rsplit(".", 1)[0]
-        current_rank = _FORMAT_RANK.get(best[stem].format, 99) if stem in best else 99
-        if _FORMAT_RANK.get(f.format, 99) < current_rank:
-            best[stem] = f
 
-    sorted_files = sorted(best.values(), key=lambda f: f.name.rsplit(".", 1)[0])
-
-    return [
-        TrackResponse(
-            index=i,
-            title=f.title,
-            filename=f.name,
-            duration=f.length,
-            stream_url=f"https://archive.org/download/{identifier}/{f.name}",
+def _to_detail_response(concert: AggregatedConcert) -> ConcertDetailResponse:
+    recordings = [
+        RecordingResponse(
+            identifier=rec.identifier,
+            source_quality=rec.source_quality.name,
+            source=rec.source,
+            taper=rec.taper,
+            lineage=rec.lineage,
+            download_count=rec.downloads,
+            tracks=[
+                TrackResponse(
+                    index=t.index,
+                    title=t.title,
+                    filename=t.filename,
+                    duration=t.duration,
+                    stream_url=t.stream_url,
+                )
+                for t in rec.tracks
+            ],
         )
-        for i, f in enumerate(sorted_files)
+        for rec in concert.recordings
     ]
-
-
-async def _fetch_item(client: IAClient, identifier: str) -> IAItem:
-    """Return IAItem from cache if present; otherwise fetch from IA and cache."""
-    cached = await _cache.get(identifier)
-    if cached is not None:
-        logger.info("cache_hit identifier=%s", identifier)
-        return IAItem.model_validate(cached)
-
-    logger.info("cache_miss identifier=%s", identifier)
-    item = await get_item_metadata(client, identifier)
-    # Store the raw validated data back as a dict for the cache.
-    await _cache.set(identifier, item.model_dump())
-    return item
-
-
-def _recording_from_item(item: IAItem, download_count: int) -> RecordingResponse:
-    tracks = _build_tracks(item.metadata.identifier, item.files)
-    return RecordingResponse(
-        identifier=item.metadata.identifier,
-        source=item.metadata.source,
-        taper=item.metadata.taper,
-        lineage=item.metadata.lineage,
-        download_count=download_count,
-        tracks=tracks,
-    )
-
-
-@router.get("/{concert_id}", response_model=ConcertResponse)
-async def get_concert(
-    concert_id: str,
-    ia_client: IAClient = Depends(get_ia_client),
-) -> ConcertResponse:
-    params = _CONCERT_MAP.get(concert_id)
-    if params is None:
-        raise HTTPException(status_code=404, detail=f"Concert '{concert_id}' not found")
-
-    search_result = await search_items(
-        ia_client,
-        creator=params["creator"],
-        date=params["date"],
-        rows=50,
-    )
-
-    if not search_result.items:
-        raise HTTPException(status_code=404, detail="No recordings found for this concert")
-
-    # Take top N by download count.
-    top_items = sorted(search_result.items, key=lambda x: x.downloads, reverse=True)[
-        :_TOP_N_RECORDINGS
-    ]
-
-    recordings: list[RecordingResponse] = []
-    top_meta = None
-    for i, search_item in enumerate(top_items):
-        item = await _fetch_item(ia_client, search_item.identifier)
-        if i == 0:
-            top_meta = item.metadata
-        recordings.append(_recording_from_item(item, search_item.downloads))
-
-    return ConcertResponse(
-        id=concert_id,
-        artist=top_meta.creator or params["creator"],
-        date=params["date"],
-        venue=top_meta.venue,
-        location=top_meta.coverage,
-        preferred_recording_id=recordings[0].identifier,
+    return ConcertDetailResponse(
+        id=concert.id,
+        artist=concert.display_artist,
+        date=concert.date,
+        venue=concert.display_venue,
+        location=concert.location,
+        preferred_recording_id=concert.preferred_recording_id,
         recordings=recordings,
     )
+
+
+@router.get("", response_model=ConcertListResponse)
+async def list_concerts(
+    artist: str,
+    page: int = Query(1, ge=1),
+    ia_client: IAClient = Depends(get_ia_client),
+) -> ConcertListResponse:
+    db_path = settings.cache_db_path
+    age = get_aggregation_age(db_path, artist)
+    if age is None or age >= settings.aggregation_staleness_seconds:
+        logger.info("aggregation_trigger artist=%s age=%s", artist, age)
+        try:
+            concerts = await asyncio.wait_for(
+                aggregate_artist(artist, ia_client, force=False),
+                timeout=_AGGREGATION_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            logger.error("aggregation_timeout artist=%s", artist)
+            raise HTTPException(status_code=504, detail="Aggregation timed out")
+    else:
+        concerts = get_concerts_for_artist(db_path, artist)
+
+    total = len(concerts)
+    page_size = settings.concerts_page_size
+    offset = (page - 1) * page_size
+    page_concerts = concerts[offset : offset + page_size]
+
+    return ConcertListResponse(
+        concerts=[_to_list_item(c) for c in page_concerts],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/{concert_id}", response_model=ConcertDetailResponse)
+async def get_concert(concert_id: str) -> ConcertDetailResponse:
+    db_path = settings.cache_db_path
+    concert = get_concert_by_id(db_path, concert_id)
+    if concert is None:
+        raise HTTPException(status_code=404, detail=f"Concert '{concert_id}' not found")
+    return _to_detail_response(concert)

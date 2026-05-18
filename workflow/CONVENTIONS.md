@@ -67,14 +67,24 @@ modularity beyond them.
 - Client: structured concurrency (`async`/`await`); playback/download lifecycle off the
   view layer.
 
-## 6. Error handling _(starter — unverified)_
+## 6. Error handling
 
-- Backend: a typed exception root (e.g. `TapeScrapeError`) with intended subtypes for IA
-  unavailability, rate-limiting, and not-found. API routes map known types to HTTP
-  statuses with structured bodies. The concrete hierarchy is formalized here once it has
-  shipped in ≥2 packets, not before.
-- Client: playback distinguishes `stalled`/`failed(reason)` and always renders a retry
-  affordance — never a silent hang (`docs/design/03-CLIENT-AND-PLAYBACK.md` § 4).
+- Backend _(starter — unverified)_: no typed exception root has shipped. Routes raise
+  `fastapi.HTTPException` directly with a `detail` string (`routes/concerts.py` → 404
+  unknown concert, 504 aggregation timeout; `routes/search.py` → 422 bad type, 501 not
+  yet implemented). A `TapeScrapeError` hierarchy with IA-unavailable / rate-limited /
+  not-found subtypes is still intended but is formalized here only once it ships in ≥2
+  packets, not before. **Gap to watch:** `orchestrate.py` swallows per-item metadata
+  fetch failures with a bare `except Exception: continue` and no log line — a flaky IA
+  is currently invisible there (Phase 2 review follow-up).
+- Client _(verified)_: playback is an explicit state machine —
+  `idle/loading/playing/paused/stalled/failed(Error)` on `PlaybackCoordinator.State`;
+  `stalled`/`failed` are legible in `MiniPlayerView`/`NowPlayingView` and `failed`
+  always renders a retry affordance (`retry()`), never a silent hang
+  (`docs/design/03-CLIENT-AND-PLAYBACK.md` § 4). _Appeared in: 01-003-client-playback
+  (initial `failed`), 02-005-player-queue-nowplaying (full machine + `stalled` + retry)._
+  Catalog network errors collapse to one `CatalogError.badResponse` — richer
+  distinction (404 vs 504 vs offline) is deferred, not yet a convention.
 
 ## 7. Testing
 
@@ -143,10 +153,59 @@ _Appeared in: 01-002-concert-endpoint (`test_concerts.py` patches `_fetch_item`)
 ## 14. PlayerBackend protocol for testable playback
 
 `PlaybackCoordinator` accepts any `PlayerBackend` conformer; tests inject a mock that
-records calls without importing AVFoundation. Production uses `AVPlayerBackend`.
+records calls without importing AVFoundation. Production uses `AVPlayerBackend`. The
+protocol carries the full observation surface as settable closure callbacks
+(`onPlaybackReady`, `onPlaybackFailed`, `onPlaybackStalled`, `onPlaybackResumed`,
+`onTrackEnd`, `onTimeUpdate`) — the coordinator drives its state machine off these, so
+KVO/notification details (and AVFoundation itself) never reach the coordinator or views.
+`PlayerBackend.swift` is its own file holding the protocol, `AVPlayerBackend`, and
+`PlaybackError`.
 
 _Appeared in: 01-003-client-playback (`PlaybackCoordinator.swift`,
-`PlaybackCoordinatorTests.swift`)._
+`PlaybackCoordinatorTests.swift`), 02-005-player-queue-nowplaying (`PlayerBackend.swift`
+extracted, observation callbacks added, mock-driven state-transition tests)._
+
+## 15. DI provider in `routes/deps.py`, overridable in tests
+
+Shared FastAPI dependencies live in `backend/routes/deps.py` (not `core/` — they need
+`fastapi.Request`, and §1 restricts `core/` to stdlib + Pydantic). `get_ia_client`
+returns the single `IAClient` built in the `main.py` lifespan and stored on
+`app.state.ia_client`. Routes consume it via `Depends(get_ia_client)`. The module-scope
+`TestClient(app)` pattern does **not** run the lifespan, so non-live route tests inject a
+stub via `app.dependency_overrides[get_ia_client]` (safe — IA is fully mocked there);
+live tests opt into the real lifespan with `with TestClient(app)`.
+
+_Appeared in: 01.5-001-iaclient-di (`get_ia_client` created in `routes/concerts.py`),
+02-001-artist-search (promoted to `routes/deps.py` at the second-consumer trigger;
+`routes/search.py` consumes it), 02-003-concert-list-endpoint (`list_concerts` injects
+it)._
+
+## 16. Persistence is raw sqlite3 in the shared cache DB
+
+All persistence — caches and aggregated concerts — uses stdlib `sqlite3` (sync, no ORM)
+against the one `settings.cache_db_path` file. Schema is idempotent `CREATE TABLE IF NOT
+EXISTS` run on first access (`MetadataCache._init_db`, `SearchCache._init_db`,
+`db.repository._ensure_tables` over `db.models.ALL_TABLES`). All SQL is parameterized.
+Caches expose an `async` get/set surface over the sync calls so callers need not change
+if storage moves; the aggregation repository is plain sync functions taking `db_path`.
+Single-writer at one-user scale is accepted; revisit only if contention appears.
+
+_Appeared in: 01-002-concert-endpoint (`core/cache.py` `MetadataCache`),
+02-001-artist-search (`core/cache.py` `SearchCache`), 02-002-concert-aggregation
+(`db/models.py`, `db/repository.py`)._
+
+## 17. Aggregation is a pure core with I/O only at the edges
+
+`aggregation/` transform functions are pure: given typed inputs they return typed
+outputs (dataclasses), no I/O, no global state — `canonicalize.py`, `venue.py`,
+`source_quality.py`, and `aggregate.aggregate_items`. Network (IA search/metadata) and
+persistence live only in `aggregation/orchestrate.py` and `db/repository.py`. This is
+what keeps aggregation fully fixture-testable with zero live IA, and is the structural
+fix for the predecessor's in-memory-dict aggregation.
+
+_Appeared in: 02-001-artist-search (`canonicalize.py` pure, route does I/O),
+02-002-concert-aggregation (`venue.py`/`source_quality.py`/`aggregate.py` pure;
+`orchestrate.py`/`repository.py` hold all I/O)._
 
 ---
 

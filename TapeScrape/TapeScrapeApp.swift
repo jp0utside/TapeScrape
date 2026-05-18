@@ -26,6 +26,7 @@ struct TapeScrapeApp: App {
 struct ContentView: View {
     private let router = DeepLinkRouter()
     @Environment(PlaybackCoordinator.self) private var playback
+    @State private var showNowPlaying = false
 
     var body: some View {
         TabView {
@@ -38,8 +39,12 @@ struct ContentView: View {
         }
         .safeAreaInset(edge: .bottom) {
             if playback.state.isActive {
-                MiniPlayerView()
+                MiniPlayerView(showNowPlaying: $showNowPlaying)
             }
+        }
+        .fullScreenCover(isPresented: $showNowPlaying) {
+            NowPlayingView()
+                .environment(playback)
         }
         .onOpenURL { url in
             if let destination = router.resolve(url) {

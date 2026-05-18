@@ -59,15 +59,25 @@ blocking. Override anytime.
   need no migration. Decide at Phase 3 (library). Inputs: how many Apple devices run it;
   whether "wipe phone and restore library" matters; OK with the "must be signed into
   iCloud" constraint. Owner: user, at Phase 3 boundary.
+  **Decision 2026-05-18 (user): local-only for v1.** Phase 3 stores the library purely
+  on-device through the repository protocols; no CloudKit, no iCloud sign-in constraint.
+  The custom-zone-shaped container hook stays in place so CloudKit is later additive with
+  **no data migration**. Revisit trigger: a second Apple device or clean-reinstall
+  resilience actually mattering in use. No Phase 3 sync/conflict/account-status work.
 
 ## Open ambiguities surfaced writing this package (need user input before the noted phase)
 
-1. **Library organization depth for v1 (Phase 3).** `IDEA.md`/goals list favorites,
-   playlists, smart collections, tags, and notes as all appealing; v1 needs at least
-   favorites. Which subset is *essential* for the first usable library vs. deferrable?
-   The tag-first model supports all of them, so this is a scope/sequencing call, not an
-   architecture one. *Owner: user, at Phase 3.* Default if unanswered: favorites +
-   minimal playlists, defer smart collections/notes.
+1. **Library organization depth for v1 — RESOLVED 2026-05-18: favorites + minimal
+   playlists.** Decision (user, at Phase 3 boundary): v1 ships **favorites** (a
+   `favorite` tag/heart on concerts/recordings) and **minimal playlists** across concerts
+   (create / add / play). Smart collections, a tag-management UI, and notes are
+   **deferred** — the tag-first model already supports them, so adding any later is
+   additive scope, not a rewrite. The dynamic Library tab (recently played, anniversaries,
+   "more from this run") derives from playback history + favorites, not from
+   smart-collection machinery. Original framing kept for history: `IDEA.md`/goals list
+   favorites, playlists, smart collections, tags, and notes as all appealing; v1 needs at
+   least favorites; this was a scope/sequencing call, not architecture. Default (now
+   confirmed, not assumed): favorites + minimal playlists, defer smart collections/notes.
 2. **Setlist enrichment source — RESOLVED 2026-05-16: IA `description` parse only for
    v1.** No external service (Setlist.fm API, SetlistAI corpus) in v1. v1 stays IA-only,
    preserving the zero-extra-network-surface posture of `CLAUDE.md` § "Network and

@@ -9,14 +9,19 @@ a preferred default recording (tap to play, no version-picker gate), a real full
 player with legible playback state, first-class offline downloads, and a tag-first
 library. Personal-use first; not an AI project at v1.
 
-> **Status: Phase 1 complete (one concert, end to end).** The app streams live audio
-> from the Internet Archive for one hardcoded concert (GD 1977-05-08 Cornell '77). The
-> FastAPI backend fetches and caches IA metadata, returns recordings and track lists with
-> opaque stream URLs; the iOS client displays them and plays via AVPlayer directly from
-> `archive.org`. Background audio, play/pause, and a mini-player bar work. No browsing,
-> search, library, or download features exist yet. This README describes only what is
-> shipped; the predecessor (`set-scrape`) shipped a README claiming features that didn't
-> exist, and avoiding that is an explicit project rule.
+> **Status: Phase 2 complete (browse, search, and a real player).** You can search for
+> an artist, browse that artist's concerts as a paginated list, open a concert, and play
+> through a recording like a real music app. The FastAPI backend canonicalizes messy IA
+> `creator`/venue strings, aggregates the many taper uploads of a show into persisted
+> canonical concerts (SQLite) with a computed preferred recording, and serves paginated
+> list/detail with opaque stream URLs; aggregation runs on-demand when an artist's data
+> is stale. The iOS client has a debounced artist search, concert list/detail, sequential
+> in-recording playback with a full-screen NowPlaying view (scrubber, track list),
+> mini-player, lock-screen / Control Center controls, and a legible playback state
+> machine (loading/stalled/failed with retry — no silent hangs). Not yet: a persisted
+> library/favorites, offline downloads, real cover art, and global track search. This
+> README describes only what is shipped; the predecessor (`set-scrape`) shipped a README
+> claiming features that didn't exist, and avoiding that is an explicit project rule.
 
 ## Architecture in one paragraph
 
