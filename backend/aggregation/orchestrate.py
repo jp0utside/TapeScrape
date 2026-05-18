@@ -10,8 +10,10 @@ from collections import defaultdict
 
 from backend.aggregation.aggregate import AggregatedConcert, aggregate_items
 from backend.aggregation.canonicalize import display_artist
+from backend.core.cache import MetadataCache
 from backend.core.config import settings
 from backend.core.http_client import IAClient
+from backend.core.logging import get_logger
 from backend.db.repository import (
     get_aggregation_age,
     get_concerts_for_artist,
@@ -20,12 +22,15 @@ from backend.db.repository import (
 from backend.ia.metadata import get_item_metadata
 from backend.ia.search import search_items
 
+logger = get_logger(__name__)
+
 _SAMPLE_SIZE = 3
 
 
 async def aggregate_artist(
     canonical_artist: str,
     ia_client: IAClient,
+    metadata_cache: MetadataCache,
     force: bool = False,
 ) -> list[AggregatedConcert]:
     """Fetch, aggregate, persist. Skip if fresh (unless force=True)."""
@@ -62,9 +67,10 @@ async def aggregate_artist(
     fetched = {}
     for identifier in identifiers_to_fetch:
         try:
-            ia_item = await get_item_metadata(ia_client, identifier)
+            ia_item = await get_item_metadata(ia_client, identifier, metadata_cache)
             fetched[identifier] = ia_item
         except Exception:
+            logger.warning("metadata_fetch_failed identifier=%s", identifier, exc_info=True)
             continue
 
     concerts = aggregate_items(canonical_artist, disp_artist, result.items, fetched)

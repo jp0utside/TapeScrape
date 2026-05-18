@@ -4,7 +4,6 @@ Uses the same cache_db_path as MetadataCache/SearchCache. Plain sqlite3,
 consistent with the Phase 1 pattern. Tables created on first access.
 """
 
-import json
 import sqlite3
 import time
 from pathlib import Path

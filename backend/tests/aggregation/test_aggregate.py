@@ -1,13 +1,11 @@
 """Tests for the core aggregation logic — grouping items into concerts."""
 
-import pytest
 
 from backend.aggregation.aggregate import (
-    AggregatedConcert,
     aggregate_items,
 )
 from backend.aggregation.source_quality import SourceQuality
-from backend.models.ia import IAFile, IAItem, IAItemMetadata, IASearchItem
+from backend.models.ia import IAItem, IAItemMetadata, IASearchItem
 
 
 def _make_search_item(
@@ -157,7 +155,6 @@ class TestAggregateItems:
         concerts = aggregate_items("grateful dead", "Grateful Dead", items, fetched)
 
         tracks = concerts[0].recordings[0].tracks
-        # Ogg Vorbis filtered at IAItem parse, but also not in _PLAYABLE_FORMATS
         assert len(tracks) == 2
         assert tracks[0].title == "Song A"
         assert tracks[1].title == "Song B"

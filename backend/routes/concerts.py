@@ -4,14 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.aggregation.aggregate import AggregatedConcert
 from backend.aggregation.orchestrate import aggregate_artist
+from backend.core.cache import MetadataCache
 from backend.core.config import settings
 from backend.core.http_client import IAClient
 from backend.core.logging import get_logger
-from backend.db.repository import (
-    get_aggregation_age,
-    get_concert_by_id,
-    get_concerts_for_artist,
-)
+from backend.db.repository import get_concert_by_id
 from backend.models.concert import (
     ConcertDetailResponse,
     ConcertListItem,
@@ -19,7 +16,7 @@ from backend.models.concert import (
     RecordingResponse,
     TrackResponse,
 )
-from backend.routes.deps import get_ia_client
+from backend.routes.deps import get_ia_client, get_metadata_cache
 
 logger = get_logger(__name__)
 
@@ -79,21 +76,16 @@ async def list_concerts(
     artist: str,
     page: int = Query(1, ge=1),
     ia_client: IAClient = Depends(get_ia_client),
+    metadata_cache: MetadataCache = Depends(get_metadata_cache),
 ) -> ConcertListResponse:
-    db_path = settings.cache_db_path
-    age = get_aggregation_age(db_path, artist)
-    if age is None or age >= settings.aggregation_staleness_seconds:
-        logger.info("aggregation_trigger artist=%s age=%s", artist, age)
-        try:
-            concerts = await asyncio.wait_for(
-                aggregate_artist(artist, ia_client, force=False),
-                timeout=_AGGREGATION_TIMEOUT,
-            )
-        except asyncio.TimeoutError:
-            logger.error("aggregation_timeout artist=%s", artist)
-            raise HTTPException(status_code=504, detail="Aggregation timed out")
-    else:
-        concerts = get_concerts_for_artist(db_path, artist)
+    try:
+        concerts = await asyncio.wait_for(
+            aggregate_artist(artist, ia_client, metadata_cache, force=False),
+            timeout=_AGGREGATION_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        logger.error("aggregation_timeout artist=%s", artist)
+        raise HTTPException(status_code=504, detail="Aggregation timed out")
 
     total = len(concerts)
     page_size = settings.concerts_page_size

@@ -10,17 +10,14 @@ import time
 import uuid
 from dataclasses import dataclass, field
 
-from backend.aggregation.canonicalize import canonical_artist_key, display_artist
 from backend.aggregation.source_quality import SourceQuality, parse_source_quality
-from backend.aggregation.venue import canonical_venue_key, cluster_venues, display_venue
+from backend.aggregation.venue import canonical_venue_key, display_venue
 from backend.models.ia import IAItem, IASearchItem
 
 _NAMESPACE = uuid.UUID("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
 
 _DATE_FULL = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _DATE_YEAR = re.compile(r"^\d{4}$")
-
-_PLAYABLE_FORMATS = {"VBR MP3", "MP3", "Flac", "FLAC", "24bit Flac", "WAVE", "AIFF"}
 
 
 @dataclass
@@ -80,10 +77,7 @@ def _concert_id(canonical_artist: str, date: str, canonical_venue: str) -> str:
 def _build_tracks(item: IAItem) -> list[AggregatedTrack]:
     tracks: list[AggregatedTrack] = []
     identifier = item.metadata.identifier
-    idx = 0
-    for f in item.files:
-        if f.format not in _PLAYABLE_FORMATS:
-            continue
+    for idx, f in enumerate(item.files):
         stream_url = f"https://archive.org/download/{identifier}/{f.name}"
         tracks.append(AggregatedTrack(
             index=idx,
@@ -93,7 +87,6 @@ def _build_tracks(item: IAItem) -> list[AggregatedTrack]:
             size=f.size,
             stream_url=stream_url,
         ))
-        idx += 1
     return tracks
 
 

@@ -10,16 +10,11 @@ from backend.core.logging import get_logger
 from backend.ia.search import search_items
 from backend.models.ia import IASearchResult
 from backend.models.search import ArtistMatch, ArtistSearchResponse
-from backend.routes.deps import get_ia_client
+from backend.routes.deps import get_ia_client, get_search_cache
 
 logger = get_logger(__name__)
 
 router = APIRouter()
-
-# Module-global cache, consistent with the Phase-1 MetadataCache pattern in
-# routes/concerts.py. Unifying caches onto app.state is a separately-tracked
-# post-Phase-1 follow-up — deliberately not done here.
-_cache = SearchCache(settings.cache_db_path)
 
 _SUPPORTED_TYPES = {"artist", "concert", "track"}
 _NOT_YET = {
@@ -42,6 +37,7 @@ async def search(
     type: str = "artist",
     page: int = 1,
     ia_client: IAClient = Depends(get_ia_client),
+    search_cache: SearchCache = Depends(get_search_cache),
 ) -> ArtistSearchResponse:
     if type not in _SUPPORTED_TYPES:
         raise HTTPException(
@@ -49,19 +45,17 @@ async def search(
             detail=f"Unsupported search type '{type}'. Expected: artist, concert, track",
         )
     if type in _NOT_YET:
-        # Honest 501 — the param shape accepts the type (F1 not foreclosed)
-        # but the feature genuinely does not exist yet.
         raise HTTPException(status_code=501, detail=_NOT_YET[type])
 
     key = _cache_key(type, q, page)
-    cached = await _cache.get(key)
+    cached = await search_cache.get(key)
     if cached is not None:
         logger.info("search_cache_hit type=%s q=%s page=%s", type, q, page)
         result = IASearchResult.model_validate(cached)
     else:
         logger.info("search_cache_miss type=%s q=%s page=%s", type, q, page)
         result = await search_items(ia_client, creator=q, page=page)
-        await _cache.set(
+        await search_cache.set(
             key, result.model_dump(), ttl_seconds=settings.search_cache_ttl_seconds
         )
 

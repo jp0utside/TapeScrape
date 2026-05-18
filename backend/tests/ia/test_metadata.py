@@ -1,9 +1,14 @@
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
-from backend.tests.helpers import load_fixture
+from backend.core.cache import MetadataCache
+from backend.core.http_client import IAClient
+from backend.ia.metadata import get_item_metadata
 from backend.models.ia import IAItem
+from backend.tests.helpers import load_fixture
 
-_UNSUPPORTED_FORMATS = {"Ogg Vorbis", "Shorten"}
 _FIXTURE_IDENTIFIER = "gd1977-05-08.aud.moore.berger.28354.flac16"
 _FIXTURE_FILE = f"{_FIXTURE_IDENTIFIER}_metadata.json"
 
@@ -21,7 +26,6 @@ def test_metadata_identifier_and_title():
 
 def test_metadata_lineage_fields_preserved():
     item = _parse_fixture()
-    # source and venue are present for this item; taper/lineage may be absent
     assert item.metadata.source is not None
     assert item.metadata.venue is not None
     assert item.metadata.identifier == _FIXTURE_IDENTIFIER
@@ -42,14 +46,12 @@ def test_playable_formats_survive():
 
 
 def test_file_count_reduced_by_filter():
+    from backend.models.ia import _PLAYABLE_FORMATS
     fixture = load_fixture(_FIXTURE_FILE)
     raw_files = fixture["files"]
-    unfiltered = len(raw_files)
     item = _parse_fixture()
-    filtered = len(item.files)
-    ogg_count = sum(1 for f in raw_files if f.get("format") == "Ogg Vorbis")
-    shn_count = sum(1 for f in raw_files if f.get("format") == "Shorten")
-    assert filtered == unfiltered - ogg_count - shn_count
+    expected = sum(1 for f in raw_files if f.get("format") in _PLAYABLE_FORMATS)
+    assert len(item.files) == expected
 
 
 def test_file_fields_present():
@@ -59,20 +61,48 @@ def test_file_fields_present():
     first = audio[0]
     assert first.name
     assert first.format
-    # length stays as string — no parsing to seconds at this stage
     assert first.length is not None
     assert isinstance(first.length, str)
 
 
 @pytest.mark.asyncio
-@pytest.mark.live_ia
-async def test_get_item_metadata_live():
-    from backend.core.http_client import IAClient
-    from backend.ia.metadata import get_item_metadata
+async def test_get_item_metadata_cache_miss(tmp_path: Path):
+    fixture = load_fixture(_FIXTURE_FILE)
+    mock_response = MagicMock()
+    mock_response.json.return_value = fixture
+    mock_client = MagicMock(spec=IAClient)
+    mock_client.get = AsyncMock(return_value=mock_response)
 
+    cache = MetadataCache(tmp_path / "meta.db")
+    item = await get_item_metadata(mock_client, _FIXTURE_IDENTIFIER, cache)
+
+    assert item.metadata.identifier == _FIXTURE_IDENTIFIER
+    mock_client.get.assert_called_once()
+    assert await cache.get(_FIXTURE_IDENTIFIER) is not None
+
+
+@pytest.mark.asyncio
+async def test_get_item_metadata_cache_hit(tmp_path: Path):
+    fixture = load_fixture(_FIXTURE_FILE)
+    cache = MetadataCache(tmp_path / "meta.db")
+    await cache.set(_FIXTURE_IDENTIFIER, fixture)
+
+    mock_client = MagicMock(spec=IAClient)
+    mock_client.get = AsyncMock()
+
+    item = await get_item_metadata(mock_client, _FIXTURE_IDENTIFIER, cache)
+
+    assert item.metadata.identifier == _FIXTURE_IDENTIFIER
+    mock_client.get.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.live_ia
+async def test_get_item_metadata_live(tmp_path: Path):
     ia_client = IAClient()
+    cache = MetadataCache(tmp_path / "meta.db")
     try:
-        item = await get_item_metadata(ia_client, _FIXTURE_IDENTIFIER)
+        item = await get_item_metadata(ia_client, _FIXTURE_IDENTIFIER, cache)
     finally:
         await ia_client.aclose()
     assert item.metadata.identifier == _FIXTURE_IDENTIFIER

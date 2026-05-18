@@ -2,30 +2,34 @@
 
 import time
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from backend.aggregation.aggregate import AggregatedConcert, AggregatedRecording, AggregatedTrack
 from backend.aggregation.source_quality import SourceQuality
+from backend.core.cache import MetadataCache
 from backend.core.config import settings as real_settings
 from backend.db.repository import save_aggregation
 from backend.main import app
-from backend.routes.deps import get_ia_client
+from backend.routes.deps import get_ia_client, get_metadata_cache
 
 client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def _override_ia_client(request):
-    """Inject a dummy IAClient for non-live tests."""
+def _override_ia_client(request, tmp_path):
+    """Inject dummy IAClient and a fresh MetadataCache for non-live tests."""
     if request.node.get_closest_marker("live_ia"):
         yield
         return
+    meta_cache = MetadataCache(tmp_path / "meta.db")
     app.dependency_overrides[get_ia_client] = lambda: object()
+    app.dependency_overrides[get_metadata_cache] = lambda: meta_cache
     yield
     app.dependency_overrides.pop(get_ia_client, None)
+    app.dependency_overrides.pop(get_metadata_cache, None)
 
 
 # --- Fixtures and helpers ---
@@ -102,7 +106,9 @@ def db_fresh(tmp_path: Path, monkeypatch) -> tuple[Path, list[AggregatedConcert]
         for i in range(5)
     ]
     save_aggregation(db, concerts)
-    monkeypatch.setattr("backend.routes.concerts.settings", _MockSettings(db))
+    mock_settings = _MockSettings(db)
+    monkeypatch.setattr("backend.routes.concerts.settings", mock_settings)
+    monkeypatch.setattr("backend.aggregation.orchestrate.settings", mock_settings)
     return db, concerts
 
 
@@ -116,7 +122,9 @@ def db_stale(tmp_path: Path, monkeypatch) -> tuple[Path, list[AggregatedConcert]
         _make_concert("stale-002", "1977-05-09", aggregated_at=stale_time),
     ]
     save_aggregation(db, concerts)
-    monkeypatch.setattr("backend.routes.concerts.settings", _MockSettings(db))
+    mock_settings = _MockSettings(db)
+    monkeypatch.setattr("backend.routes.concerts.settings", mock_settings)
+    monkeypatch.setattr("backend.aggregation.orchestrate.settings", mock_settings)
     return db, concerts
 
 
@@ -124,7 +132,9 @@ def db_stale(tmp_path: Path, monkeypatch) -> tuple[Path, list[AggregatedConcert]
 def db_empty(tmp_path: Path, monkeypatch) -> Path:
     """Empty DB — artist never aggregated."""
     db = tmp_path / "test.db"
-    monkeypatch.setattr("backend.routes.concerts.settings", _MockSettings(db))
+    mock_settings = _MockSettings(db)
+    monkeypatch.setattr("backend.routes.concerts.settings", mock_settings)
+    monkeypatch.setattr("backend.aggregation.orchestrate.settings", mock_settings)
     return db
 
 
@@ -163,7 +173,6 @@ class TestListConcerts:
         }
 
     def test_recording_count_matches_recordings(self, db_fresh):
-        _, concerts = db_fresh
         items = client.get("/concerts?artist=grateful+dead").json()["concerts"]
         assert all(item["recording_count"] >= 1 for item in items)
 
@@ -187,13 +196,14 @@ class TestListConcerts:
         assert response.status_code == 200
         mock_agg.assert_called_once()
 
-    def test_fresh_data_does_not_trigger_aggregation(self, db_fresh, monkeypatch):
-        mock_agg = AsyncMock(return_value=[])
+    def test_route_always_calls_aggregate_artist(self, db_fresh, monkeypatch):
+        _, fresh_concerts = db_fresh
+        mock_agg = AsyncMock(return_value=fresh_concerts)
         monkeypatch.setattr("backend.routes.concerts.aggregate_artist", mock_agg)
 
         response = client.get("/concerts?artist=grateful+dead")
         assert response.status_code == 200
-        mock_agg.assert_not_called()
+        mock_agg.assert_called_once()
 
     def test_missing_artist_triggers_aggregation(self, db_empty, monkeypatch):
         mock_agg = AsyncMock(return_value=[])
@@ -266,16 +276,14 @@ class TestGetConcert:
             "1977-05-08",
             recordings=[aud_rec, sbd_rec],  # AUD listed first intentionally
         )
-        # Fix preferred_recording_id to SBD (the better one)
         concert.preferred_recording_id = sbd_rec.identifier
-        # Manually sort as aggregate_items would (best first)
         concert.recordings.sort(
             key=lambda r: (r.source_quality.value, -len(r.tracks), -r.downloads)
         )
         save_aggregation(db, [concert])
         monkeypatch.setattr("backend.routes.concerts.settings", _MockSettings(db))
 
-        body = client.get(f"/concerts/order-test").json()
+        body = client.get("/concerts/order-test").json()
         qualities = [r["source_quality"] for r in body["recordings"]]
         assert qualities[0] == "SBD"
         assert qualities[1] == "AUD"

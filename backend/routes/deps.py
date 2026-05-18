@@ -9,9 +9,18 @@ same injected client — the second-consumer trigger pre-registered in the
 
 from fastapi import Request
 
+from backend.core.cache import MetadataCache, SearchCache
 from backend.core.http_client import IAClient
 
 
 def get_ia_client(request: Request) -> IAClient:
     """The single IAClient built in the app lifespan (`main.py`)."""
     return request.app.state.ia_client
+
+
+def get_metadata_cache(request: Request) -> MetadataCache:
+    return request.app.state.metadata_cache
+
+
+def get_search_cache(request: Request) -> SearchCache:
+    return request.app.state.search_cache

@@ -1,6 +1,5 @@
 """Tests for venue canonicalization and clustering."""
 
-import pytest
 
 from backend.aggregation.venue import (
     canonical_venue_key,

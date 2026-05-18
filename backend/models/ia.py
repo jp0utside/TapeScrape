@@ -1,6 +1,9 @@
 from pydantic import BaseModel, field_validator
 
-_UNSUPPORTED_FORMATS = {"Ogg Vorbis", "Shorten"}
+_PLAYABLE_FORMATS = {
+    "VBR MP3", "MP3", "64Kbps MP3", "128Kbps MP3",
+    "Flac", "FLAC", "24bit Flac", "WAVE", "AIFF",
+}
 
 
 class IASearchItem(BaseModel):
@@ -43,5 +46,5 @@ class IAItem(BaseModel):
 
     @field_validator("files", mode="before")
     @classmethod
-    def drop_unsupported_formats(cls, files: list) -> list:
-        return [f for f in files if f.get("format") not in _UNSUPPORTED_FORMATS]
+    def keep_playable_formats(cls, files: list) -> list:
+        return [f for f in files if f.get("format") in _PLAYABLE_FORMATS]

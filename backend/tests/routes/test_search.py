@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from backend.core.cache import SearchCache
 from backend.main import app
 from backend.models.ia import IASearchItem, IASearchResult
-from backend.routes.deps import get_ia_client
+from backend.routes.deps import get_ia_client, get_search_cache
 from backend.tests.helpers import load_fixture
 
 client = TestClient(app)
@@ -21,15 +21,13 @@ def _fixture_search_result() -> IASearchResult:
 
 @pytest.fixture(autouse=True)
 def _isolate(tmp_path):
-    """Module-scope TestClient never runs the lifespan, so inject a dummy
-    IAClient (search_items is mocked in every test that reaches it). Give
-    each test a fresh on-disk SearchCache so cache-hit assertions are
-    deterministic.
-    """
+    """Inject a dummy IAClient and a fresh per-test SearchCache via DI overrides."""
+    search_cache = SearchCache(tmp_path / "s.db")
     app.dependency_overrides[get_ia_client] = lambda: object()
-    with patch("backend.routes.search._cache", SearchCache(tmp_path / "s.db")):
-        yield
+    app.dependency_overrides[get_search_cache] = lambda: search_cache
+    yield
     app.dependency_overrides.pop(get_ia_client, None)
+    app.dependency_overrides.pop(get_search_cache, None)
 
 
 def test_artist_search_collapses_to_canonical():
