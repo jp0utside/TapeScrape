@@ -162,36 +162,49 @@ struct NowPlayingView: View {
     }
 
     private var trackList: some View {
-        List(Array(playback.queue.enumerated()), id: \.offset) { idx, track in
-            Button {
-                playback.play(playback.queue, startingAt: idx)
-            } label: {
-                HStack(spacing: 10) {
-                    if idx == playback.currentIndex {
-                        Image(systemName: "speaker.wave.2.fill")
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 20)
-                    } else {
-                        Text("\(idx + 1)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 20)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(track.title ?? track.filename)
-                            .foregroundStyle(idx == playback.currentIndex ? Color.accentColor : .primary)
-                        if let dur = track.durationSeconds {
-                            Text(formatTime(dur))
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
+        List {
+            ForEach(Array(playback.queue.enumerated()), id: \.element.id) { idx, item in
+                Button {
+                    playback.skipTo(index: idx)
+                } label: {
+                    HStack(spacing: 10) {
+                        if idx == playback.currentIndex {
+                            Image(systemName: "speaker.wave.2.fill")
+                                .foregroundStyle(Color.accentColor)
+                                .frame(width: 20)
+                        } else {
+                            Text("\(idx + 1)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 20)
                         }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.track.title ?? item.track.filename)
+                                .foregroundStyle(idx == playback.currentIndex ? Color.accentColor : .primary)
+                            if let dur = item.track.durationSeconds {
+                                Text(formatTime(dur))
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        Spacer()
                     }
-                    Spacer()
+                    .opacity(idx < playback.currentIndex ? 0.5 : 1.0)
+                }
+                .buttonStyle(.plain)
+            }
+            .onDelete { offsets in
+                for idx in offsets.sorted().reversed() {
+                    playback.removeFromQueue(at: idx)
                 }
             }
-            .buttonStyle(.plain)
+            .onMove { source, destination in
+                guard let from = source.first else { return }
+                playback.moveInQueue(from: from, to: destination)
+            }
         }
         .listStyle(.plain)
+        .environment(\.editMode, .constant(.active))
     }
 
     // MARK: - Helpers

@@ -70,3 +70,24 @@ extension TrackResponse {
         return nil
     }
 }
+
+struct TrackMatch: Codable, Hashable, Identifiable {
+    var id: String { "\(recordingIdentifier)/\(filename)" }
+    let title: String?
+    let filename: String
+    let duration: String?
+    let streamUrl: String
+    let recordingIdentifier: String
+    let concertId: String
+    let artist: String
+    let date: String
+    let venue: String?
+    let sourceQuality: String
+}
+
+struct TrackSearchResponse: Codable {
+    let query: String
+    let type: String
+    let results: [TrackMatch]
+    let total: Int
+}

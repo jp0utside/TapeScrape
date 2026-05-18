@@ -24,6 +24,15 @@ actor CatalogClient {
         return try await fetch(ArtistSearchResponse.self, url: components.url!)
     }
 
+    func searchTracks(query: String) async throws -> TrackSearchResponse {
+        var components = URLComponents(url: baseURL.appendingPathComponent("search"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [
+            URLQueryItem(name: "type", value: "track"),
+            URLQueryItem(name: "q", value: query),
+        ]
+        return try await fetch(TrackSearchResponse.self, url: components.url!)
+    }
+
     func getConcerts(artist: String, page: Int = 1) async throws -> ConcertListResponse {
         var components = URLComponents(url: baseURL.appendingPathComponent("concerts"), resolvingAgainstBaseURL: false)!
         components.queryItems = [

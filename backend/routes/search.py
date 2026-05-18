@@ -1,16 +1,19 @@
 import hashlib
+import sqlite3
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.aggregation.canonicalize import canonical_artist_key, display_artist
+from backend.aggregation.source_quality import SourceQuality
 from backend.core.cache import SearchCache
 from backend.core.config import settings
 from backend.core.http_client import IAClient
 from backend.core.logging import get_logger
+from backend.db.repository import _ensure_tables
 from backend.ia.search import search_items
 from backend.models.ia import IASearchResult
-from backend.models.search import ArtistMatch, ArtistSearchResponse
-from backend.routes.deps import get_ia_client, get_search_cache
+from backend.models.search import ArtistMatch, ArtistSearchResponse, TrackMatch, TrackSearchResponse
+from backend.routes.deps import get_db_path, get_ia_client, get_search_cache
 
 logger = get_logger(__name__)
 
@@ -19,10 +22,6 @@ router = APIRouter()
 _SUPPORTED_TYPES = {"artist", "concert", "track"}
 _NOT_YET = {
     "concert": "concert aggregation lands in packets 02-002/02-003",
-    "track": (
-        "track search is scoped/future per 00-ARCHITECTURE.md §4; the "
-        "track_index table lands when track search does, not before"
-    ),
 }
 
 
@@ -31,14 +30,50 @@ def _cache_key(type_: str, q: str, page: int) -> str:
     return hashlib.sha256(normalized.encode()).hexdigest()
 
 
-@router.get("/search", response_model=ArtistSearchResponse)
+async def _search_tracks(q: str, db_path: str, limit: int = 50) -> TrackSearchResponse:
+    _ensure_tables(db_path)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """SELECT t.title, t.filename, t.duration, t.stream_url,
+                      r.identifier AS recording_identifier, r.source_quality,
+                      c.id AS concert_id, c.display_artist, c.date, c.display_venue
+               FROM tracks t
+               JOIN recordings r ON t.recording_id = r.identifier
+               JOIN concerts c ON r.concert_id = c.id
+               WHERE t.title LIKE ? COLLATE NOCASE
+               ORDER BY c.date DESC
+               LIMIT ?""",
+            (f"%{q}%", limit),
+        ).fetchall()
+
+    results = [
+        TrackMatch(
+            title=row["title"],
+            filename=row["filename"],
+            duration=row["duration"],
+            stream_url=row["stream_url"],
+            recording_identifier=row["recording_identifier"],
+            concert_id=row["concert_id"],
+            artist=row["display_artist"],
+            date=row["date"],
+            venue=row["display_venue"],
+            source_quality=SourceQuality(row["source_quality"]).name,
+        )
+        for row in rows
+    ]
+    return TrackSearchResponse(query=q, results=results, total=len(results))
+
+
+@router.get("/search")
 async def search(
     q: str,
     type: str = "artist",
     page: int = 1,
     ia_client: IAClient = Depends(get_ia_client),
     search_cache: SearchCache = Depends(get_search_cache),
-) -> ArtistSearchResponse:
+    db_path: str = Depends(get_db_path),
+) -> ArtistSearchResponse | TrackSearchResponse:
     if type not in _SUPPORTED_TYPES:
         raise HTTPException(
             status_code=422,
@@ -46,6 +81,10 @@ async def search(
         )
     if type in _NOT_YET:
         raise HTTPException(status_code=501, detail=_NOT_YET[type])
+
+    if type == "track":
+        logger.info("track_search q=%s", q)
+        return await _search_tracks(q, db_path)
 
     key = _cache_key(type, q, page)
     cached = await search_cache.get(key)

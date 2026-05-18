@@ -54,6 +54,9 @@ changes — favorites are entirely client-side (`02-DATA-MODEL.md` § 5).
   constructed and injected into the environment
 - `TapeScrape/Models/Concert.swift` — `ConcertListItem` / `ConcertDetailResponse`
   (the item IDs used in tagging)
+- `TapeScrape/Views/ConcertListView.swift` — `ConcertDetailLoaderView` is defined here
+  (internal, not private); reuse it in `LibraryTab` for tap-to-detail navigation rather
+  than re-implementing the fetch-then-show pattern
 
 ## Files expected to change
 

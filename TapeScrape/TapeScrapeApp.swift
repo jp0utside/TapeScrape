@@ -3,9 +3,19 @@ import SwiftUI
 
 @main
 struct TapeScrapeApp: App {
-    @State private var playback = PlaybackCoordinator()
+    private static let dbURL = FileManager.default
+        .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("library.sqlite")
+
+    private let library: any LibraryRepository
+    private let playbackHistory: any PlaybackHistoryRepository
+    @State private var playback: PlaybackCoordinator
 
     init() {
+        let history = SQLitePlaybackHistoryRepository(dbURL: TapeScrapeApp.dbURL)
+        playbackHistory = history
+        library = SQLiteLibraryRepository(dbURL: TapeScrapeApp.dbURL)
+        _playback = State(initialValue: PlaybackCoordinator(history: history))
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
@@ -19,6 +29,8 @@ struct TapeScrapeApp: App {
         WindowGroup {
             ContentView()
                 .environment(playback)
+                .environment(\.libraryRepository, library)
+                .environment(\.playbackHistoryRepository, playbackHistory)
         }
     }
 }

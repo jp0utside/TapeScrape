@@ -9,19 +9,24 @@ a preferred default recording (tap to play, no version-picker gate), a real full
 player with legible playback state, first-class offline downloads, and a tag-first
 library. Personal-use first; not an AI project at v1.
 
-> **Status: Phase 2 complete (browse, search, and a real player).** You can search for
-> an artist, browse that artist's concerts as a paginated list, open a concert, and play
-> through a recording like a real music app. The FastAPI backend canonicalizes messy IA
-> `creator`/venue strings, aggregates the many taper uploads of a show into persisted
-> canonical concerts (SQLite) with a computed preferred recording, and serves paginated
-> list/detail with opaque stream URLs; aggregation runs on-demand when an artist's data
-> is stale. The iOS client has a debounced artist search, concert list/detail, sequential
-> in-recording playback with a full-screen NowPlaying view (scrubber, track list),
-> mini-player, lock-screen / Control Center controls, and a legible playback state
-> machine (loading/stalled/failed with retry — no silent hangs). Not yet: a persisted
-> library/favorites, offline downloads, real cover art, and global track search. This
-> README describes only what is shipped; the predecessor (`set-scrape`) shipped a README
-> claiming features that didn't exist, and avoiding that is an explicit project rule.
+> **Status: Phase 3 complete (library, queue, and dynamic browse).** Builds on Phase 2's
+> search/browse/player with an on-device, tag-first library: heart a concert (persisted
+> in SQLite), cross-concert playlists (create / add / reorder / play / delete), real
+> queue management (play-next / add-to-end / reorder / remove), a dynamic Home (Recently
+> Played, On This Day favorited-show anniversaries, Artists You Listen To) and Library
+> tab, and scoped per-track search over the catalog you've already browsed. Library data
+> is local-only (D3 resolved: CloudKit deferred, additive, no migration). Earlier phases
+> still hold: the FastAPI backend canonicalizes messy IA `creator`/venue strings,
+> aggregates taper uploads into persisted canonical concerts (SQLite) with a computed
+> preferred recording, serves paginated list/detail with opaque stream URLs, and
+> re-aggregates on-demand when stale; the iOS client has debounced artist search, concert
+> list/detail, sequential playback with a full-screen NowPlaying view (scrubber, track
+> list), mini-player, lock-screen / Control Center controls, and a legible
+> loading/stalled/failed-with-retry state machine (no silent hangs). Not yet: offline
+> downloads, real cover art, global (cross-catalog) track search, resume-from-position.
+> This README describes only what is shipped; the predecessor (`set-scrape`) shipped a
+> README claiming features that didn't exist, and avoiding that is an explicit project
+> rule.
 
 ## Architecture in one paragraph
 
@@ -142,7 +147,16 @@ Expect: search returns artist names with `canonical_key`; concert list is pagina
 9. **Error states:** kill the backend mid-stream. The player should show a
    stalled/failed state with a retry button, not hang silently. Restart the backend and
    tap retry.
-10. **Home tab:** should show Grateful Dead concerts (navigates to the concert list).
+10. **Home tab:** before you've played anything it shows a Grateful Dead browse starter.
+    After playing a show it becomes dynamic — Recently Played, On This Day (favorited-show
+    anniversaries, if any match today's month-day), and Artists You Listen To.
+11. **Library / playlists:** heart a concert (toolbar heart on concert detail) → it
+    appears under Library ▸ Favorites and survives a relaunch. From a track's context
+    menu, "Add to Playlist…" → create a playlist, then open it from Library ▸ Playlists
+    and play/reorder/delete tracks.
+12. **Scoped track search:** in the Search tab switch the scope to "Tracks" and search a
+    song title. Results are limited to artists you've already browsed (the v1 scoping —
+    no global crawl); tapping a result opens that concert's detail.
 
 ### What to watch for
 

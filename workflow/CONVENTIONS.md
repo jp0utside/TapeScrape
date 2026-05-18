@@ -74,9 +74,9 @@ modularity beyond them.
   unknown concert, 504 aggregation timeout; `routes/search.py` → 422 bad type, 501 not
   yet implemented). A `TapeScrapeError` hierarchy with IA-unavailable / rate-limited /
   not-found subtypes is still intended but is formalized here only once it ships in ≥2
-  packets, not before. **Gap to watch:** `orchestrate.py` swallows per-item metadata
-  fetch failures with a bare `except Exception: continue` and no log line — a flaky IA
-  is currently invisible there (Phase 2 review follow-up).
+  packets, not before. (The Phase-2 "flaky IA is invisible" gap is closed: `02.5-001`
+  made `orchestrate.py`'s per-item failure path log at `WARNING` with `exc_info=True`
+  while the run continues — see `CLAUDE.md` § Audit.)
 - Client _(verified)_: playback is an explicit state machine —
   `idle/loading/playing/paused/stalled/failed(Error)` on `PlaybackCoordinator.State`;
   `stalled`/`failed` are legible in `MiniPlayerView`/`NowPlayingView` and `failed`
@@ -206,6 +206,57 @@ fix for the predecessor's in-memory-dict aggregation.
 _Appeared in: 02-001-artist-search (`canonicalize.py` pure, route does I/O),
 02-002-concert-aggregation (`venue.py`/`source_quality.py`/`aggregate.py` pure;
 `orchestrate.py`/`repository.py` hold all I/O)._
+
+## 18. Client persistence is a raw-sqlite3 `actor` repository in `library.sqlite`
+
+The client parallel to §16. A persistence-backed repository is a Swift `actor`
+conforming to its repository protocol, backed by stdlib `SQLite3` (no SwiftData, no
+ORM) against one shared Application-Support file (`library.sqlite`). The shape, repeated
+verbatim across both implementations:
+
+- `nonisolated(unsafe) private var db: OpaquePointer?` — the actor serializes all
+  access; `nonisolated(unsafe)` is required because `deinit` (which calls
+  `sqlite3_close`) is nonisolated and `OpaquePointer` is not `Sendable`.
+- `init(dbURL:)` opens the connection then calls `private static` schema/seed helpers
+  (static, not instance — Swift 6 forbids calling actor-isolated methods from a
+  synchronous nonisolated `init`).
+- Schema is idempotent `CREATE TABLE IF NOT EXISTS`; system rows seeded with
+  `INSERT OR IGNORE`. **All SQL is parameterized** (`sqlite3_bind_*`, never
+  interpolation). `SQLITE_TRANSIENT` is defined file-locally
+  (`unsafeBitCast(-1, to: sqlite3_destructor_type.self)`) — the C macro doesn't bridge.
+- Tables denormalize display + playback data (`concert_snapshots`, `playlist_items`,
+  the context columns on `playback_history`) so the Library/Home tabs render and play
+  with **no network call** — the deliberate analogue of the backend cache tables.
+- The `InMemory*` actor stub (§11) is kept as the protocol's other implementation and
+  the test/preview default (§19); it must mirror the SQLite semantics (e.g. contiguous
+  `sort_order` renumbering after remove/move).
+
+Known gap (single-user-acceptable, tracked as Phase-3 follow-ups, **not** convention):
+each repository opens its **own** connection to the one file, no `busy_timeout`/WAL,
+and `sqlite3_step` return codes on writes are unchecked — a concurrent-write
+`SQLITE_BUSY` is silently dropped. A shared DB actor is the fix if a 3rd impl or real
+contention appears; over-abstracting two impls is the larger risk now.
+
+_Appeared in: 03-001-favorites (`SQLiteLibraryRepository`), 03-002-playback-history
+(`SQLitePlaybackHistoryRepository`), 03-004-playlists (`playlist_items` extends the
+same `SQLiteLibraryRepository`)._
+
+## 19. Repository dependency injection: Environment key + one shared instance
+
+Each repository protocol gets a `private struct …Key: EnvironmentKey` whose
+`defaultValue` is the `InMemory*` stub, plus an `EnvironmentValues` computed property;
+views read it with `@Environment(\.libraryRepository)` /
+`@Environment(\.playbackHistoryRepository)` — never an init parameter threaded through
+the view tree. `PlaybackCoordinator` instead takes its history repo by **init**
+injection (it is not a view). `TapeScrapeApp` constructs **exactly one** instance per
+repository and injects the *same* instance both into the environment and into
+`PlaybackCoordinator(history:)`, so a write by the coordinator is visible to the tabs
+that read it. The `InMemory*` default keeps previews and unit tests working with no
+SQLite and no wiring.
+
+_Appeared in: 03-001-favorites (`libraryRepository` key + `EnvironmentValues`
+extension), 03-002-playback-history (`playbackHistoryRepository` key + the single
+shared-instance wiring in `TapeScrapeApp`), consumed by 03-004/03-005._
 
 ---
 

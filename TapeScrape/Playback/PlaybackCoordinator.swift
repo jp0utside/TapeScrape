@@ -2,6 +2,12 @@ import AVFoundation
 import MediaPlayer
 import Observation
 
+struct QueueItem: Identifiable, Sendable {
+    let id: UUID = UUID()
+    let track: TrackResponse
+    let concertContext: ConcertContext?
+}
+
 @Observable
 @MainActor
 final class PlaybackCoordinator {
@@ -25,15 +31,18 @@ final class PlaybackCoordinator {
 
     private(set) var state: State = .idle
     private(set) var currentTrack: TrackResponse?
-    private(set) var queue: [TrackResponse] = []
+    private(set) var queue: [QueueItem] = []
     private(set) var currentIndex: Int = 0
     private(set) var elapsed: TimeInterval = 0
     private(set) var duration: TimeInterval = 0
 
     private let backend: any PlayerBackend
+    private let history: any PlaybackHistoryRepository
 
-    init(player: any PlayerBackend = AVPlayerBackend()) {
+    init(player: any PlayerBackend = AVPlayerBackend(),
+         history: any PlaybackHistoryRepository = InMemoryPlaybackHistoryRepository()) {
         self.backend = player
+        self.history = history
         setupCallbacks()
         setupRemoteCommands()
         setupInterruptionHandling()
@@ -41,8 +50,61 @@ final class PlaybackCoordinator {
 
     // MARK: - Public API
 
-    func play(_ tracks: [TrackResponse], startingAt index: Int = 0) {
-        queue = tracks
+    func play(_ tracks: [TrackResponse], startingAt index: Int = 0,
+              concert: ConcertContext? = nil) {
+        queue = tracks.map { QueueItem(track: $0, concertContext: concert) }
+        currentIndex = index
+        loadCurrentTrack()
+    }
+
+    func playNext(_ tracks: [TrackResponse], concert: ConcertContext? = nil) {
+        let items = tracks.map { QueueItem(track: $0, concertContext: concert) }
+        if state.isIdle {
+            queue = items
+            currentIndex = 0
+            loadCurrentTrack()
+        } else {
+            queue.insert(contentsOf: items, at: currentIndex + 1)
+        }
+    }
+
+    func addToEnd(_ tracks: [TrackResponse], concert: ConcertContext? = nil) {
+        let items = tracks.map { QueueItem(track: $0, concertContext: concert) }
+        if state.isIdle {
+            queue = items
+            currentIndex = 0
+            loadCurrentTrack()
+        } else {
+            queue.append(contentsOf: items)
+        }
+    }
+
+    func removeFromQueue(at index: Int) {
+        guard queue.indices.contains(index) else { return }
+        queue.remove(at: index)
+        if index < currentIndex {
+            currentIndex -= 1
+        } else if index == currentIndex {
+            if queue.isEmpty {
+                stop()
+            } else {
+                currentIndex = min(currentIndex, queue.count - 1)
+                loadCurrentTrack()
+            }
+        }
+    }
+
+    func moveInQueue(from source: Int, to destination: Int) {
+        guard queue.indices.contains(source) else { return }
+        let currentID = queue[currentIndex].id
+        queue.move(fromOffsets: IndexSet(integer: source), toOffset: destination)
+        if let newIndex = queue.firstIndex(where: { $0.id == currentID }) {
+            currentIndex = newIndex
+        }
+    }
+
+    func skipTo(index: Int) {
+        guard queue.indices.contains(index) else { return }
         currentIndex = index
         loadCurrentTrack()
     }
@@ -109,7 +171,7 @@ final class PlaybackCoordinator {
             stop()
             return
         }
-        let track = queue[currentIndex]
+        let track = queue[currentIndex].track
         currentTrack = track
         elapsed = 0
         duration = track.durationSeconds ?? 0
@@ -127,6 +189,21 @@ final class PlaybackCoordinator {
             guard let self, self.state.isLoading else { return }
             self.state = .playing
             self.updateNowPlayingInfo()
+            let idx = self.currentIndex
+            if let track = self.currentTrack,
+               idx < self.queue.count,
+               let ctx = self.queue[idx].concertContext {
+                let h = self.history
+                let file = track.filename
+                Task {
+                    try? await h.recordPlay(
+                        identifier: ctx.recordingIdentifier,
+                        trackFile: file,
+                        at: Date(),
+                        context: ctx
+                    )
+                }
+            }
         }
 
         backend.onPlaybackFailed = { [weak self] error in

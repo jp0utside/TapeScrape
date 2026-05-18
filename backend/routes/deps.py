@@ -10,6 +10,7 @@ same injected client — the second-consumer trigger pre-registered in the
 from fastapi import Request
 
 from backend.core.cache import MetadataCache, SearchCache
+from backend.core.config import settings
 from backend.core.http_client import IAClient
 
 
@@ -24,3 +25,7 @@ def get_metadata_cache(request: Request) -> MetadataCache:
 
 def get_search_cache(request: Request) -> SearchCache:
     return request.app.state.search_cache
+
+
+def get_db_path() -> str:
+    return str(settings.cache_db_path)
